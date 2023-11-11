@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+    <form method="POST" action="/fingerprint/addfinger" id="fingerprintForm">
+        <input type="text" id="dataNama" name="nama" placeholder="nama">
+        <input type="text" id="dataKelas" name="kelas" placeholder="kelas">
+        <input type="text" id="dataNIM" name="nim" placeholder="NIM">
+        <input type="text" id="dataFinger" name="finger" disabled>
+        <button type="button" id="daftarFinger" onclick="koneksi()">Finger!</button>
+        <button type="button" onclick="submitForm()">Daftar</button>
+    </form>
+
+    <script>
+        let inputFinger = document.getElementById("dataFinger");
+
+        // Declare the koneksi function in the global scope
+        function koneksi() {
+            console.log(mqtt);
+            const url = "ws://192.168.1.105:9001";
+
+            const options = {
+                clean: true,
+                connectTimeout: 4000,
+                clientId: 'webServerFinger',
+                username: 'rifqi',
+                password: 'rifqi123',
+            };
+
+            const client = mqtt.connect(url, options);
+
+            inputFinger.value = "Menunggu jari...";
+
+            client.on('connect', function() {
+                client.subscribe('/finger/fingerMaha', function (err) {
+                    if (err) {
+                        console.error("Error subscribing:", err);
+                        throw err;
+                    }
+                });
+            });
+
+            client.on('message', function(topic, message) {
+                console.log("Pesan:", message.toString());
+                console.log("Topic:", topic);
+                inputFinger.value = message.toString();
+                console.log("inputFinger value:", inputFinger.value);
+
+                // Now, trigger the input event manually
+                var event = new Event('input');
+                inputFinger.dispatchEvent(event);
+            });
+        }
+
+        function submitForm() {
+            inputFinger.removeAttribute("disabled");
+            document.getElementById("fingerprintForm").submit();
+        }
+    </script>
+</body>
+</html>
