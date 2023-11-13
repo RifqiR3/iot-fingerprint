@@ -8,17 +8,21 @@
 </head>
 <body>
 
-    <form method="POST" action="/fingerprint/addfinger" id="fingerprintForm">
-        <input type="text" id="dataNama" name="nama" placeholder="nama">
-        <input type="text" id="dataKelas" name="kelas" placeholder="kelas">
-        <input type="text" id="dataNIM" name="nim" placeholder="NIM">
-        <input type="text" id="dataFinger" name="finger" disabled>
+    <form method="POST" action="/fingerprint/validasi" id="fingerprintForm">
+        <input type="text" id="dataFingerValidasi" name="fingerValidasi" disabled>
         <button type="button" id="daftarFinger" onclick="koneksi()">Finger!</button>
         <button type="button" onclick="submitForm()">Daftar</button>
     </form>
 
+    <% if(nama) { %>
+        <h1>Nama: <%= nama %></h1>
+        <h1>Kelas: <%= kelas %></h1>
+        <h1>NIM: <%= nim %></h1>
+        <h1>Persentase: <%= persentase %>%</h1>
+    <% } %>
+
     <script>
-        let inputFinger = document.getElementById("dataFinger");
+        let inputFingerValidasi = document.getElementById("dataFingerValidasi");
 
         // Declare the koneksi function in the global scope
         function koneksi() {
@@ -35,7 +39,7 @@
 
             const client = mqtt.connect(url, options);
 
-            inputFinger.value = "Menunggu jari...";
+            inputFingerValidasi.value = "Menunggu jari...";
 
             client.on('connect', function() {
                 client.subscribe('/finger/fingerMaha', function (err) {
@@ -47,22 +51,22 @@
             });
 
             client.on('message', function(topic, message) {
-                if (inputFinger.value === "Menunggu jari...") {
-                    inputFinger.value = "";
+                if (inputFingerValidasi.value === "Menunggu jari...") {
+                    inputFingerValidasi.value = "";
                 }
                 console.log("Pesan:", message.toString());
                 console.log("Topic:", topic);
-                inputFinger.value += message.toString();
-                console.log("inputFinger value:", inputFinger.value);
+                inputFingerValidasi.value += message.toString();
+                console.log("inputFingerValidasi value:", inputFingerValidasi.value);
 
                 // Now, trigger the input event manually
                 var event = new Event('input');
-                inputFinger.dispatchEvent(event);
+                inputFingerValidasi.dispatchEvent(event);
             });
         }
 
         function submitForm() {
-            inputFinger.removeAttribute("disabled");
+            inputFingerValidasi.removeAttribute("disabled");
             document.getElementById("fingerprintForm").submit();
         }
     </script>
