@@ -4,6 +4,10 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// Server Config
+var port = 3000;
+const host = "10.2.3.45";
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var fingerRouter = require('./routes/fingerprint');
@@ -40,6 +44,10 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+app.listen(port, host, () => {
+  console.log(`Server is running at http://${host}:${port}`);
 });
 
 module.exports = app;

@@ -47,6 +47,11 @@ router.post('/validasi', function(req, res, next) {
     let persentaseAwal = 0;
     let persentaseAkhir = 0;
     let finger = req.body.fingerValidasi;
+
+    if(finger == "") {
+        res.redirect('/fingerprint/validasifinger');
+    }
+
     let query = `SELECT * FROM datamahasiswa`;
 
     database.query(query, function(err, data) {
@@ -61,7 +66,7 @@ router.post('/validasi', function(req, res, next) {
 
             for (let index = 0; index <= data.length; index++) {
                 if (data[index] && data[index].fingerPrint) {
-                    persentaseAwal = calculateBinarySimilarity(finger, data[index].fingerPrint);
+                    persentaseAwal = calculateSimilarity(finger, data[index].fingerPrint);
                     if (persentaseAkhir <= persentaseAwal) {
                         hasilData[0].nama = data[index].nama;
                         hasilData[0].kelas = data[index].kelas;
@@ -141,5 +146,28 @@ function calculateBinarySimilarity(str1, str2) {
 
     return similarityPercentage.toFixed(2);
 }
+
+function hexSimilarity(hexString1, hexString2) {
+    // Convert hexadecimal strings to binary
+    const bin1 = BigInt(`0x${hexString1}`).toString(2);
+    const bin2 = BigInt(`0x${hexString2}`).toString(2);
+  
+    // Pad the binary strings to make them of equal length
+    const maxLength = Math.max(bin1.length, bin2.length);
+    const paddedBin1 = bin1.padStart(maxLength, '0');
+    const paddedBin2 = bin2.padStart(maxLength, '0');
+  
+    // Calculate the Hamming distance
+    const hammingDistance = [...paddedBin1].reduce(
+      (acc, bit, index) => acc + (bit !== paddedBin2[index] ? 1 : 0),
+      0
+    );
+  
+    // Calculate the percentage similarity
+    const similarityPercentage = ((maxLength - hammingDistance) / maxLength) * 100;
+  
+    return similarityPercentage.toFixed(2);
+}
+  
 
 module.exports = router;
