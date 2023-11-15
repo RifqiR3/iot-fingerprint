@@ -1,3 +1,4 @@
+require('dotenv').config();
 var express = require('express');
 var router = express.Router();
 var database = require('../database');
@@ -6,6 +7,7 @@ var database = require('../database');
 router.get('/', function(req, res, next) {
     res.render("fingerprintIndex", {
         title: 'Daftar',
+        url: process.env.URL_HOST,
     })
 });
 
@@ -16,6 +18,7 @@ router.get('/validasifinger', function(req, res, next) {
         kelas: 'Menunggu...',
         nim: 'Menunggu...',
         persentase: 'Menunggu...',
+        url: process.env.URL_HOST,
     })
 });
 
