@@ -6,7 +6,7 @@ var logger = require('morgan');
 
 // Server Config
 var port = 3000;
-const host = "10.2.3.45";
+const host = "10.2.3.115";
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -47,7 +47,7 @@ app.use(function(err, req, res, next) {
 });
 
 app.listen(port, host, () => {
-  console.log(`Server is running at http://${host}:${port}`);
+  console.log(`Server jalan di: http://${host}:${port}`);
 });
 
 module.exports = app;

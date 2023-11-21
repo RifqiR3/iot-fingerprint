@@ -9,7 +9,7 @@ var connection = mysql.createConnection({
 
 connection.connect(function(error){
     if(error) {
-        throw error;
+        throw new Error("Database tidak aktif");
     } else {
         console.log('MySQL database terconnect');
     }

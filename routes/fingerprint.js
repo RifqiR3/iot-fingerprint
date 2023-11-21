@@ -5,14 +5,47 @@ var database = require('../database');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-    res.render("fingerprintIndex", {
+    res.render("fingerprint/index", {
+        title: 'Index',
+    })
+});
+
+router.get('/daftar', function(req, res, next) {
+    res.render("fingerprint/fingerprint", {
         title: 'Daftar',
         url: process.env.URL_HOST,
     })
 });
 
+router.get('/charts', function(req, res, next) {
+    res.render("fingerprint/charts", {
+        title: 'Charts',
+        url: process.env.URL_HOST,
+    })
+});
+
+router.get('/tables', function(req, res, next) {
+    var query = `
+        SELECT id, nama, kelas, NIM FROM datamahasiswa;
+    `;
+
+    database.query(query, function(err, data){
+        if (err){
+            throw err;
+        } else {
+            res.render("fingerprint/tables", {
+                title: 'Tables',
+                data: data,
+                url: process.env.URL_HOST,
+            })
+        }
+    })
+
+    
+});
+
 router.get('/validasifinger', function(req, res, next) {
-    res.render("fingervalidasi", {
+    res.render("fingerprint/validasifinger", {
         title: 'Validasi',
         nama: 'Menunggu...',
         kelas: 'Menunggu...',
@@ -40,16 +73,15 @@ router.post('/addfinger', function(req, res, next) {
         if (err){
             throw err;
         } else {
-            res.redirect("/fingerprint");
+            res.redirect("/fingerprint/daftar");
         }
-        
     })
 });
 
 router.post('/validasi', function(req, res, next) {
     let persentaseAwal = 0;
     let persentaseAkhir = 0;
-    let finger = req.body.fingerValidasi;
+    let finger = req.body.finger;
 
     if(finger == "") {
         res.redirect('/fingerprint/validasifinger');
@@ -81,12 +113,13 @@ router.post('/validasi', function(req, res, next) {
                     console.log(`Persentase: ${persentaseAwal}`);
 
                     if (index === data.length - 1) {
-                        res.render("fingervalidasi", { 
+                        res.render("fingerprint/validasifinger", { 
                             title: 'Validasi',
                             nama: hasilData[0].nama,
                             kelas: hasilData[0].kelas,
                             nim: hasilData[0].nim,
                             persentase: persentaseAkhir,
+                            url: process.env.URL_HOST,
                         });
                         break;
                     }
