@@ -10,7 +10,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>Monitoring - Charts</title>
+    <title><%= title %></title>
 
     <!-- Custom fonts for this template-->
     <link
@@ -23,8 +23,17 @@
       rel="stylesheet"
     />
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <!-- Custom styles for this template-->
     <link href="/stylesheets/css/sb-admin-2.min.css" rel="stylesheet" />
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
   </head>
 
   <body id="page-top">
@@ -162,57 +171,145 @@
           <!-- Begin Page Content -->
           <div class="container-fluid">
             <!-- Page Heading -->
-            <h1 class="h3 mb-2 text-gray-800">Charts</h1>
+            <h1 class="h3 mb-2 text-gray-800">Node</h1>
             <!-- Content Row -->
             <div class="row">
-              <div class="col-xl-8 col-lg-7">
-                <!-- Area Chart -->
-                <div class="card shadow mb-4">
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      Area Chart
-                    </h6>
-                  </div>
-                  <div class="card-body">
-                    <div class="chart-area">
-                      <canvas id="myAreaChart"></canvas>
-                    </div>
-                  
-                  </div>
-                </div>
+              <!-- Table tambah node -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Node anda: </th>
+                    <th scope="col">
+                      <div class="d-grid gap-2 d-md-flex justify-content-end">
+                        <button type="button" data-toggle="modal" data-target="#modalTambahNode" class="btn btn-outline-success">Tambah Node</button>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+              </table>
 
-                <!-- Bar Chart -->
-                <div class="card shadow mb-4">
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Bar Chart</h6>
-                  </div>
-                  <div class="card-body">
-                    <div class="chart-bar">
-                      <canvas id="myBarChart"></canvas>
+              <!-- Modal AddNode -->
+              <form method="POST" action="/fingerprint/addNode">
+                <div class="modal fade" id="modalTambahNode" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title fw-bold text-black" id="exampleModalCenterTitle">Tambah Node</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <!-- Form -->
+                        <div class="mb-3">
+                          <label for="exampleInputEmail1" class="form-label">Nama Node</label>
+                          <input type="text" class="form-control" name="namaNode">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Lokasi Node</label>
+                          <input type="text" class="form-control" name="lokasiNode">
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Tambah</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </form>
 
-              <!-- Donut Chart -->
-              <div class="col-xl-4 col-lg-5">
-                <div class="card shadow mb-4">
-                  <!-- Card Header - Dropdown -->
-                  <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      Donut Chart
-                    </h6>
-                  </div>
-                  <!-- Card Body -->
-                  <div class="card-body">
-                    <div class="chart-pie pt-4">
-                      <canvas id="myPieChart"></canvas>
+              <!-- Table Info Node -->
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Nama Node</th>
+                    <th scope="col">Lokasi Node</th>
+                    <th scope="col">UID</th>
+                    <th scope="col">Tgl.Daftar</th>
+                    <th scope="col">Mode Node</th>
+                    <th scope="col">Config</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% for (let index = 0; index < data.length; index++) { %>
+                  <tr>
+                    <td><%= data[index].nama_node %></td>
+                    <td><%= data[index].lokasi_node %></td>
+                    <td><%= data[index].UID %></td>
+                    <td><%= data[index].tgl_daftar %></td>
+                    <td>
+                      <!-- Enroll = 1, Kehadiran = 2 -->
+                      <% if(data[index].status_node == 1){ %>
+                        <button type="button" class="btn btn-success" id="enroll<%= data[index].UID %>">Enroll</button>
+                        <button data-toggle="modal" data-target="#modalUpdateStatus<%= index %>" type="button" class="btn btn-outline-dark" id="kehadiran<%= data[index].UID %>">Kehadiran</button>
+                      <% } else { %>
+                        <button data-toggle="modal" data-target="#modalUpdateStatus<%= index %>" type="button" class="btn btn-outline-dark" id="enroll<%= data[index].UID %>">Enroll</button>
+                        <button type="button" class="btn btn-success" id="kehadiran<%= data[index].UID %>">Kehadiran</button>
+                      <% } %>
+                    </td>
+                    <td>
+                      <button type="button" data-toggle="modal" data-target="#modalHapusNode<%= index %>" style="background-color: red;">
+                        <i class="fa fa-trash-o" style="font-size:20px;color:white;"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <!-- Modal DeleteNode -->
+                  <form method="POST" action="/fingerprint/deleteNode">
+                    <div class="modal fade" id="modalHapusNode<%= index %>" tabindex="-1" role="dialog" aria-labelledby="modalHapusNode" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title fw-bold text-black" id="exampleModalCenterTitle">Konfirmasi Hapus</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <!-- Form -->
+                            <input type="text" value="<%= data[index].UID %>" name="UID" hidden>
+                            <h6>Anda yakin ingin menghapus node ini? UID = "<%= data[index].UID %>"</h6>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-danger">Hapus</button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <hr />
-                    
-                  </div>
-                </div>
-              </div>
+                  </form>
+                  <!-- Modal update status node -->
+                  <form method="POST" action="/fingerprint/updateNodeStatus">
+                    <div class="modal fade" id="modalUpdateStatus<%= index %>" tabindex="-1" role="dialog" aria-labelledby="modalHapusNode" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title fw-bold text-black" id="exampleModalCenterTitle">Konfirmasi</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <% if(data[index].status_node == 1){%>
+                              <input name="status" type="number" value="2" hidden>
+                            <% } else { %>
+                              <input name="status" type="number" value="1" hidden>
+                            <% } %>
+                            <!-- Form -->
+                            <input type="text" value="<%= data[index].UID %>" name="UID" hidden>
+                            <h6>Anda yakin ingin mengupdate status node ini? UID = "<%= data[index].UID %>"</h6>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-success">Update</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                  <% } %>
+                </tbody>
+              </table>
             </div>
           </div>
           <!-- /.container-fluid -->
@@ -277,6 +374,43 @@
       </div>
     </div>
 
+    <!-- Node Mode -->
+    <script>
+      console.log(mqtt);
+      // Setup Mqtt
+      const url = "<%= url %>";
+      console.log(url);
+      const options = {
+          clean: true,
+          connectTimeout: 4000,
+          clientId: 'webServerFinger',
+          username: 'rifqi',
+          password: 'rifqi123',
+      };
+      // Setup data
+      console.log("<%= data[0].UID %>");
+      // Replace HTML entities in the JSON string
+      const cleanedJsonDataString = '<%= JSON.stringify(data) %>'.replace(/&quot;/g, '"');
+      // Replace other possible HTML entities
+      const fullyCleanedJsonDataString = cleanedJsonDataString.replace(/&#34;/g, '"');
+      // Parse the fully cleaned JSON string into a JavaScript object
+      const dataArray = JSON.parse(fullyCleanedJsonDataString);
+
+      console.log(dataArray[0].UID);
+
+      // Koneksi Mqtt
+      const client = mqtt.connect(url, options)
+      // Kalau terkoneksi
+      client.on('connect', function() {
+        console.log("Terknoneksi");
+        for (let index = 0; index < dataArray.length; index++) {
+          client.publish(`/finger/${dataArray[index].UID}`, `${dataArray[index].status_node}`);
+          console.log("Berhasil publish ke topic:", `/finger/${dataArray[index].UID}`);
+          console.log("Dengan pesan status:", `${dataArray[index].status_node}`);
+        } 
+      }); 
+    </script>
+
     <!-- Bootstrap core JavaScript-->
     <script src="/stylesheets/vendor/jquery/jquery.min.js"></script>
     <script src="/stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
@@ -285,14 +419,7 @@
     <script src="/stylesheets/vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+    <script src="/stylesheets/js/sb-admin-2.min.js"></script>
 
-    <!-- Page level plugins -->
-    <script src="/stylesheets/vendor/chart.js/Chart.min.js"></script>
-
-    <!-- Page level custom scripts -->
-    <script src="/stylesheets/js/demo/chart-area-demo.js"></script>
-    <script src="/stylesheets/js/demo/chart-pie-demo.js"></script>
-    <script src="/stylesheets/js/demo/chart-bar-demo.js"></script>
   </body>
 </html>

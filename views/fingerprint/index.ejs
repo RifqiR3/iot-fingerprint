@@ -10,7 +10,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>Monitoring - Dashboard</title>
+    <title><%= title %></title>
 
     <!-- Custom fonts for this template-->
     <link
@@ -22,6 +22,9 @@
       href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
       rel="stylesheet"
     />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom styles for this template-->
     <link href="stylesheets/css/sb-admin-2.min.css" rel="stylesheet" />
@@ -53,7 +56,7 @@
         <li class="nav-item active">
           <a class="nav-link" href="/fingerprint">
             <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Dashboard</span></a
+            <span>Monitor</span></a
           >
         </li>
 
@@ -64,7 +67,7 @@
         <li class="nav-item">
           <a class="nav-link" href="/fingerprint/charts">
             <i class="fas fa-fw fa-chart-area"></i>
-            <span>Statistik Absensi</span></a
+            <span>Device</span></a
           >
         </li>
 
@@ -200,236 +203,84 @@
           <!-- Begin Page Content -->
           <div class="container-fluid">
             <!-- Page Heading -->
-            <div
-              class="d-sm-flex align-items-center justify-content-between mb-4"
-            >
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
               <h1 class="h3 mb-0 text-gray-800">Monitoring</h1>
             </div>
+          </div>
 
-            <!-- Content Row -->
+          <!-- Table -->
+          <div class="container-fluid">
             <div class="row">
-              <!-- Earnings (Monthly) Card Example -->
-              <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2">
-                  <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                      <div class="col mr-2">
-                        <div
-                          class="text-xs font-weight-bold text-primary text-uppercase mb-1"
-                        >
-                          Mahasiswa
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                          3000
-                        </div>
-                      </div>
-                      <div class="col-auto">
-                        <i class="fas fa-user fa-2x text-gray-300"></i>
-                      </div>
+              <div class="col-sm-3">
+                <form method="POST" action="/fingerprint/addUser">
+                  <h5 class="font-weight-bold">1. User Fingerprint ID</h5>
+                  <div class="mb-3">
+                    <label for="exampleInputEmail1" class="form-label">Lokasi Node</label>
+                    <select class="form-select" aria-label="Default select example" name="lokasiNode" id="lokasiNode">
+                      <% for (let index = 0; index < data.length; index++) { %>
+                        <option value="<%= data[index].UID %>"><%= data[index].lokasi_node %></option>
+                      <% } %>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label  for="exampleInputPassword1" class="form-label">ID Fingerprint (1-127)</label>
+                    <input min="1" max="127" type="number" class="form-control" id="exampleInputPassword1">
+                  </div>
+                  <div class="d-grid gap-2 col-6 mx-auto">
+                    <button type="submit" class="btn btn-outline-primary">Submit</button>
+                  </div>
+                  <br>
+                  <div style="display: block;" class="card text-center">
+                    <div class="card-header bg-success text-white">
+                      Baris Dipilih!
                     </div>
                   </div>
-                </div>
+                </form>
+                <br>
+                <form>
+                  <h5 class="font-weight-bold">2. User Info</h5>
+                  <div class="mb-3">
+                    <input placeholder="NIM..." type="text" class="form-control" id="exampleInputPassword1">
+                  </div>
+                  <div class="mb-3">
+                    <input placeholder="Nama..." type="text" class="form-control" id="exampleInputEmail1">
+                  </div>
+                  <div class="mb-3">
+                    <input placeholder="Kelas..." type="text" class="form-control" id="exampleInputPassword1">
+                  </div>
+                  <div class="d-grid gap-2 col-6 mx-auto">
+                    <button type="submit" class="btn btn-outline-primary">Update</button>
+                  </div>
+                </form>
               </div>
-
-              <!-- Earnings (Monthly) Card Example -->
-              <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2">
-                  <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                      <div class="col mr-2">
-                        <div
-                          class="text-xs font-weight-bold text-success text-uppercase mb-1"
-                        >
-                          Ruangan
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                          20
-                        </div>
-                      </div>
-                      <div class="col-auto">
-                        <i class="fas fa-home fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Earnings (Monthly) Card Example -->
-              <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2">
-                  <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                      <div class="col mr-2">
-                        <div
-                          class="text-xs font-weight-bold text-info text-uppercase mb-1"
-                        >
-                          Jadwal
-                        </div>
-                        <div class="row no-gutters align-items-center">
-                          <div class="col-auto">
-                            <div
-                              class="h5 mb-0 mr-3 font-weight-bold text-gray-800"
-                            >
-                              
-                            </div>
-                          </div>
-                          <div class="col">
-                            <div class="progress progress-sm mr-2">
-                              <div
-                                class="progress-bar bg-info"
-                                role="progressbar"
-                                style="width: 50%"
-                                aria-valuenow="50"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-auto">
-                        <i
-                          class="fas fa-clipboard-list fa-2x text-gray-300"
-                        ></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Pending Requests Card Example -->
-              <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2">
-                  <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                      <div class="col mr-2">
-                        <div
-                          class="text-xs font-weight-bold text-warning text-uppercase mb-1"
-                        >
-                          Ruangan Kosong
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                          
-                        </div>
-                      </div>
-                      <div class="col-auto">
-                        <i class="fas fa-comments fa-2x text-gray-300"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="col-sm-9">
+                <table class="table text-center">
+                  <thead>
+                    <tr>
+                      <th scope="col">FingerID</th>
+                      <th scope="col">Nama</th>
+                      <th scope="col">NIM</th>
+                      <th scope="col">Kelas</th>
+                      <th scope="col">Tgl.Daftar</th>
+                      <th scope="col">Lokasi Node</th>
+                      <th scope="col">Status Finger</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">1</th>
+                      <td>Mark</td>
+                      <td>Otto</td>
+                      <td>@mdo</td>
+                      <td>@mdo</td>
+                      <td>@mdo</td>
+                      <td>@mdo</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            <!-- Content Row -->
-
-            <div class="row">
-              <!-- Area Chart -->
-              <div class="col-xl-8 col-lg-7">
-                <div class="card shadow mb-4">
-                  <!-- Card Header - Dropdown -->
-                  <div
-                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
-                  >
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      Statistik Absensi
-                    </h6>
-                    <div class="dropdown no-arrow">
-                      <a
-                        class="dropdown-toggle"
-                        href="#"
-                        role="button"
-                        id="dropdownMenuLink"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                      >
-                        <i
-                          class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"
-                        ></i>
-                      </a>
-                      <div
-                        class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                        aria-labelledby="dropdownMenuLink"
-                      >
-                        <div class="dropdown-header">Dropdown Header:</div>
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#"
-                          >Something else here</a
-                        >
-                      </div>
-                    </div>
-                  </div>
-                  <!-- Card Body -->
-                  <div class="card-body">
-                    <div class="chart-area">
-                      <canvas id="myAreaChart"></canvas>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Pie Chart -->
-              <div class="col-xl-4 col-lg-5">
-                <div class="card shadow mb-4">
-                  <!-- Card Header - Dropdown -->
-                  <div
-                    class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
-                  >
-                    <h6 class="m-0 font-weight-bold text-primary">
-                      
-                    </h6>
-                    <div class="dropdown no-arrow">
-                      <a
-                        class="dropdown-toggle"
-                        href="#"
-                        role="button"
-                        id="dropdownMenuLink"
-                        data-toggle="dropdown"
-                        aria-haspopup="true"
-                        aria-expanded="false"
-                      >
-                        <i
-                          class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"
-                        ></i>
-                      </a>
-                      <div
-                        class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                        aria-labelledby="dropdownMenuLink"
-                      >
-                        <div class="dropdown-header">Dropdown Header:</div>
-                        <a class="dropdown-item" href="#">Action</a>
-                        <a class="dropdown-item" href="#">Another action</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#"
-                          >Something else here</a
-                        >
-                      </div>
-                    </div>
-                  </div>
-                  <!-- Card Body -->
-                  <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                      <canvas id="myPieChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                      <span class="mr-2">
-                        <i class="fas fa-circle text-primary"></i> Hadir
-                      </span>
-                      <span class="mr-2">
-                        <i class="fas fa-circle text-success"></i> Alpa
-                      </span>
-                      <span class="mr-2">
-                        <i class="fas fa-circle text-info"></i> Izin/Sakit
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-              
+          </div>
 
         <!-- Footer -->
         <footer class="sticky-footer bg-white">

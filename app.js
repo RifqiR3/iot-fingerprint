@@ -6,7 +6,7 @@ var logger = require('morgan');
 
 // Server Config
 var port = 3000;
-const host = "10.2.3.115";
+const host = "localhost";
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
