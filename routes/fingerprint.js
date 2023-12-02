@@ -6,18 +6,28 @@ var database = require('../database');
 /* GET home page. */
 router.get('/', function(req, res, next) {
     let query = `
-        SELECT lokasi_node, UID FROM datanode;
+        SELECT id_node, lokasi_node, UID FROM datanode;
     `;
     database.query(query, function(err, data){
         if (err) {
             throw err;
         } else {
-            res.render("fingerprint/index", {
-                title: "Monitor",
-                data: data,
+            let queryUser = `SELECT *
+            FROM datamahasiswa
+            INNER JOIN datanode ON datamahasiswa.id_node=datanode.id_node;`;
+            database.query(queryUser, function(err2, dataMhs){
+                if(err2){
+                    throw err2;
+                } else {
+                    res.render("fingerprint/index", {
+                        title: "Monitor",
+                        data: data,
+                        dataMhs: dataMhs
+                    });
+                }
             });
         }
-    })
+    });
 });
 
 router.get('/daftar', function(req, res, next) {
@@ -140,7 +150,38 @@ router.post('/updateNodeStatus', function(req, res, next) {
 });
 
 router.post('/addUser', function(req, res, next) {
+    // Ambil data id_finger
+    const id_finger = req.body.id_finger;
+    const id_node = req.body.id_node;
+
+    const queryCheck = 'SELECT * FROM datamahasiswa WHERE id_finger = ? AND id_node = ?';
+    const valuesCheck = [id_finger, id_node];
+
+    // Check dulu apakah data sudah ada atau belum
+    database.query(queryCheck, valuesCheck, function(err, data){
+        if (err) {
+            console.error(err);
+            res.status(500).json({error: "Internal Server Error"});
+        } else if (data.length > 0) {
+            console.log("Data ada");
+            res.json({exists: true});
+        } else {
+            // Kalau tidak ada lanjut insert data ke database
+            let tanggal = new Date();
+            const query = `INSERT INTO datamahasiswa VALUES ('', "empty", "empty", "empty", ?, ?, ?, "empty")`;
+            const values = [id_finger, id_node, tanggal.toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })];
     
+            database.query(query, values, function (err, data) {
+                if (err) {
+                    console.error(err);
+                    res.status(500).json({error: "Internal Server Error"});
+                } else {
+                    res.json({exists: false});
+                }
+            });
+        }
+    });
 });
+
 
 module.exports = router;
