@@ -22,7 +22,8 @@ router.get('/', function(req, res, next) {
                     res.render("fingerprint/index", {
                         title: "Monitor",
                         data: data,
-                        dataMhs: dataMhs
+                        dataMhs: dataMhs,
+                        url: process.env.URL_HOST,
                     });
                 }
             });
@@ -152,11 +153,16 @@ router.post('/updateNodeStatus', function(req, res, next) {
 router.post('/addUser', function(req, res, next) {
     // Ambil data id_finger
     const id_finger = req.body.id_finger;
+    // Cek value id_finger
+    if (id_finger == 0 || id_finger > 127) {
+        res.json({zerofinger: true});
+        return;
+    }
+    // Ambil data id_node
     const id_node = req.body.id_node;
-
+    // Query
     const queryCheck = 'SELECT * FROM datamahasiswa WHERE id_finger = ? AND id_node = ?';
     const valuesCheck = [id_finger, id_node];
-
     // Check dulu apakah data sudah ada atau belum
     database.query(queryCheck, valuesCheck, function(err, data){
         if (err) {
@@ -183,5 +189,29 @@ router.post('/addUser', function(req, res, next) {
     });
 });
 
+router.post('/updateUser', function(req, res, next){
+    console.log(req.body);
+    // Ambil data
+    const nim = req.body.nim;
+    const nama = req.body.nama;
+    const kelas = req.body.kelas;
+    const id_finger = req.body.id_finger;
+    const uid = req.body.uid;
+    // Query
+    const query = `UPDATE datamahasiswa
+    JOIN datanode
+    ON datanode.id_node = datamahasiswa.id_node
+    SET datamahasiswa.nama = "${nama}", datamahasiswa.NIM = "${nim}", datamahasiswa.kelas = "${kelas}"
+    WHERE datamahasiswa.id_finger = "${id_finger}" AND datanode.UID = "${uid}"`;
+    // Jalankan query
+    database.query(query, function(err, data){
+        if (err) {
+            console.error(err);
+            res.status(500).json({error: err});
+        } else {
+            res.json({success: true});
+        }
+    });
+});
 
 module.exports = router;

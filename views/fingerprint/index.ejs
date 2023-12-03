@@ -27,7 +27,9 @@
     <link href="stylesheets/css/sb-admin-2.min.css" rel="stylesheet" />
     <!-- Sweetalert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.all.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css">
+    <!-- MQTT -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   </head>
 
   <body id="page-top">
@@ -212,7 +214,7 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-sm-3">
-                <form method="POST" onsubmit="addUser(event)" action="/fingerprint/addUser">
+                <form id="addForm">
                   <h5 class="font-weight-bold">1. User Fingerprint ID</h5>
                   <div class="mb-3">
                     <label for="exampleInputEmail1" class="form-label">Lokasi Node</label>
@@ -227,7 +229,7 @@
                     <input min="1" max="127" type="number" class="form-control" name="id_finger" id="idfinger">
                   </div>
                   <div class="d-grid gap-2 col-6 mx-auto">
-                    <button type="submit" class="btn btn-outline-primary">Submit</button>
+                    <button type="button" onclick="addUser()" class="btn btn-outline-primary">Submit</button>
                   </div>
                   <br>
                   <div style="display: block;" class="card text-center">
@@ -237,7 +239,7 @@
                   </div>
                 </form>
                 <br>
-                <form action="POST">
+                <form id="updateForm">
                   <h5 class="font-weight-bold">2. User Info</h5>
                   <div class="mb-3">
                     <input id="input_nim" name="nim" placeholder="NIM..." type="text" class="form-control">
@@ -248,8 +250,17 @@
                   <div class="mb-3">
                     <input id="input_kelas" name="kelas" placeholder="Kelas..." type="text" class="form-control">
                   </div>
-                  <div class="d-grid gap-2 col-6 mx-auto">
-                    <button type="submit" class="btn btn-outline-primary">Update</button>
+                  <input id="input_id_finger" name="input_id_finger" type="text" hidden>
+                  <input id="input_UID" name="input_UID" type="text" hidden>
+                  <div class="d-grid gap-2 col-6 mx-auto mb-3">
+                    <button id="update_user" type="button" onclick="updateUser()" class="btn btn-outline-primary">Update</button>
+                  </div>
+                  <h5 class="font-weight-bold">3. Finger</h5>
+                  <div class="mb-3">
+                    <input id="statusFinger" name="statusFinger" placeholder="BELUM ADA DATA YANG TERPILIH" type="text" class="form-control fw-bold disabled">
+                  </div>
+                  <div class="d-grid gap-2 col-6 mx-auto mb-3">
+                    <button id="fingerButton" type="button" onclick="addFinger()" class="btn btn-outline-primary">Finger</button>
                   </div>
                 </form>
               </div>
@@ -270,7 +281,7 @@
                     <% for (let index = 0; index < dataMhs.length; index++) { %>
                       <tr onclick="clickRow(this)" id="<%= dataMhs[index].id_finger + dataMhs[index].lokasi_node %>">
                         <td class="fw-bold" scope="row"><%= dataMhs[index].id_finger %></td>
-                        <td><%= dataMhs[index].lokasi_node %></td>
+                        <td class="fw-bold"><%= dataMhs[index].lokasi_node %></td>
                         <td><%= dataMhs[index].nama %></td>
                         <td><%= dataMhs[index].NIM %></td>
                         <td><%= dataMhs[index].kelas %></td>
@@ -343,25 +354,124 @@
       </div>
     </div>
 
+    <!-- Sweetalert -->
+    <script>
+      function addUser() {
+        // event.preventDefault();
+        fetch('/fingerprint/addUser', {
+          method: 'POST',
+          headers:{
+            'Content-Type': 'Application/json'
+          },
+          body: JSON.stringify({
+            id_finger: document.getElementById('idfinger').value,
+            id_node: document.getElementById('idnode').value
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.error) {
+            // Periksa console jika ada error
+            console.error(data.error)
+          } else if (data.exists) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Data sudah ada',
+              text: 'ID dan Node ini sudah ada di database',
+            });
+          } else if (data.zerofinger) {
+            Swal.fire({
+              icon: 'error',
+              title: 'ID ERROR',
+              text: 'ID tidak boleh 0 atau lebih dari 127',
+            });
+          } else {
+            Swal.fire({
+              icon: 'success',
+              title: 'Data Dimasukkan!',
+              text: 'Data berhasil dimasukkan ke dalam database',
+            }).then (() => {
+              window.location.href = '/fingerprint';
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        })
+      }
+
+      function updateUser(){
+        console.log('Form submitted');
+        const payload = {
+          nim: document.getElementById('input_nim').value,
+          nama: document.getElementById('input_nama').value,
+          kelas: document.getElementById('input_kelas').value,
+          id_finger: document.getElementById('input_id_finger').value,
+          uid: document.getElementById('input_UID').value,
+        };
+        console.log('Payload:', payload);
+        fetch('/fingerprint/updateUser', {
+          method: 'POST',
+          headers:{
+            'Content-Type': 'Application/json'
+          },
+          body: JSON.stringify({
+            nim: document.getElementById('input_nim').value,
+            nama: document.getElementById('input_nama').value,
+            kelas: document.getElementById('input_kelas').value,
+            id_finger: document.getElementById('input_id_finger').value,
+            uid: document.getElementById('input_UID').value,
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.error) {
+            // Periksa console jika ada error
+            console.error(data.error)
+          } else if (data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Berhasil Update!',
+              text: 'Data berhasil diupdate!',
+            }).then(() => {
+              window.location.href = '/fingerprint';
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        })
+      }
+      // Fungsi MQTT
+      function addFinger(){
+        console.log(mqtt);
+        // Setup URL broker
+        const url = '<%= url %>';
+        // Setup options
+        const options = {
+          clean: true,
+          connectTimeout: 4000,
+          clientId: 'webServerFinger',
+          username: 'rifqi',
+          password: 'rifqi123',
+        };
+        // Koneksi ke broker
+        const client = mqtt.connect(url, options);
+
+      }
+    </script>
     <!-- Kode behaviour halaman -->
     <script src="stylesheets/fingerprint/indexBack.js"></script>
-
     <!-- Bootstrap core JavaScript-->
     <script src="stylesheets/vendor/jquery/jquery.min.js"></script>
     <script src="stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
     <!-- Core plugin JavaScript-->
     <script src="stylesheets/vendor/jquery-easing/jquery.easing.min.js"></script>
-
     <!-- Custom scripts for all pages-->
     <script src="stylesheets/js/sb-admin-2.min.js"></script>
 
-    <!-- Page level plugins -->
-    <script src="stylesheets/vendor/chart.js/Chart.min.js"></script>
-
-    <!-- Page level custom scripts -->
-    <script src="stylesheets/js/demo/chart-area-demo.js"></script>
-    <script src="stylesheets/js/demo/chart-pie-demo.js"></script>
 
   </body>
 </html>
