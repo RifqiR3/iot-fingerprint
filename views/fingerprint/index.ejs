@@ -252,6 +252,7 @@
                   </div>
                   <input id="input_id_finger" name="input_id_finger" type="text" hidden>
                   <input id="input_UID" name="input_UID" type="text" hidden>
+                  <input id="input_id_node" name="input_id_node" type="text" hidden>
                   <div class="d-grid gap-2 col-6 mx-auto mb-3">
                     <button id="update_user" type="button" onclick="updateUser()" class="btn btn-outline-primary">Update</button>
                   </div>
@@ -279,7 +280,7 @@
                   </thead>
                   <tbody>
                     <% for (let index = 0; index < dataMhs.length; index++) { %>
-                      <tr onclick="clickRow(this)" id="<%= dataMhs[index].id_finger + dataMhs[index].lokasi_node %>">
+                      <tr style="cursor: pointer;" onclick="clickRow(this)" id="<%= dataMhs[index].id_finger + dataMhs[index].lokasi_node %>">
                         <td class="fw-bold" scope="row"><%= dataMhs[index].id_finger %></td>
                         <td class="fw-bold"><%= dataMhs[index].lokasi_node %></td>
                         <td><%= dataMhs[index].nama %></td>
@@ -288,6 +289,7 @@
                         <td><%= dataMhs[index].tgl_daftar_mhs %></td>
                         <td><%= dataMhs[index].status_finger %></td>
                         <td hidden><%= dataMhs[index].UID %></td>
+                        <td hidden><%= dataMhs[index].id_node %></td>
                       </tr>
                     <% } %>
                   </tbody>
@@ -356,97 +358,17 @@
 
     <!-- Sweetalert -->
     <script>
-      function addUser() {
-        // event.preventDefault();
-        fetch('/fingerprint/addUser', {
-          method: 'POST',
-          headers:{
-            'Content-Type': 'Application/json'
-          },
-          body: JSON.stringify({
-            id_finger: document.getElementById('idfinger').value,
-            id_node: document.getElementById('idnode').value
-          }),
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
-          if (data.error) {
-            // Periksa console jika ada error
-            console.error(data.error)
-          } else if (data.exists) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Data sudah ada',
-              text: 'ID dan Node ini sudah ada di database',
-            });
-          } else if (data.zerofinger) {
-            Swal.fire({
-              icon: 'error',
-              title: 'ID ERROR',
-              text: 'ID tidak boleh 0 atau lebih dari 127',
-            });
-          } else {
-            Swal.fire({
-              icon: 'success',
-              title: 'Data Dimasukkan!',
-              text: 'Data berhasil dimasukkan ke dalam database',
-            }).then (() => {
-              window.location.href = '/fingerprint';
-            });
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        })
-      }
-
-      function updateUser(){
-        console.log('Form submitted');
-        const payload = {
-          nim: document.getElementById('input_nim').value,
-          nama: document.getElementById('input_nama').value,
-          kelas: document.getElementById('input_kelas').value,
-          id_finger: document.getElementById('input_id_finger').value,
-          uid: document.getElementById('input_UID').value,
-        };
-        console.log('Payload:', payload);
-        fetch('/fingerprint/updateUser', {
-          method: 'POST',
-          headers:{
-            'Content-Type': 'Application/json'
-          },
-          body: JSON.stringify({
-            nim: document.getElementById('input_nim').value,
-            nama: document.getElementById('input_nama').value,
-            kelas: document.getElementById('input_kelas').value,
-            id_finger: document.getElementById('input_id_finger').value,
-            uid: document.getElementById('input_UID').value,
-          }),
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
-          if (data.error) {
-            // Periksa console jika ada error
-            console.error(data.error)
-          } else if (data.success) {
-            Swal.fire({
-              icon: 'success',
-              title: 'Berhasil Update!',
-              text: 'Data berhasil diupdate!',
-            }).then(() => {
-              window.location.href = '/fingerprint';
-            });
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        })
-      }
       // Fungsi MQTT
       function addFinger(){
-        console.log(mqtt);
+        // UID dari node
+        const uid_node = document.getElementById('input_UID').value;
+        // ID Finger
+        const id_finger = document.getElementById('input_id_finger').value;
+        // ID Node
+        const id_node = document.getElementById('input_id_node').value;
+        // Status finger
+        document.getElementById('statusFinger').value = "MENUNGGU STATUS NODE...";
+        document.getElementById('fingerButton').classList.add('disabled');
         // Setup URL broker
         const url = '<%= url %>';
         // Setup options
@@ -459,7 +381,86 @@
         };
         // Koneksi ke broker
         const client = mqtt.connect(url, options);
+        // Apabila client berhasil terkoneksi ke broker
+        client.on('connect', function(){
+          // Update status finger
+          document.getElementById('statusFinger').value = "TERKONEKSI!";
+          // Publish id finger untuk dienroll
+          client.publish(`/finger/${uid_node}`, `${Number(id_finger)}`);
+          // Update status finger
+          console.log("Berhasil publish ke topic:", `/finger/${uid_node}`);
+          document.getElementById('statusFinger').value = "SUKSES PUBLISH ID FINGER!";
+          client.subscribe(`/finger/${uid_node}`, function (err) {
+            if (err) {
+              console.error("Error subscribing:", err);
+              throw err;
+            }
+            Swal.fire({
+              title: "WAIT",
+              text: "Menunggu status dari node",
+              icon: "info",
+              showConfirmButton: false,
+              showCancelButton: false,
+              allowOutsideClick: false,
+              timerProgressBar: true,
+            });
+          });
+        });
+        // Apabila ada pesan masuk, update status finger
+        client.on('message', function(topic, message){
+          updateStatusFinger(id_node, id_finger);
+        });
 
+        client.on('error', function (error) {
+          console.error('MQTT Error:', error.message);
+        });
+
+        client.on('reconnect', function () {
+          console.log("MENCOBA RECONNECT...");
+          document.getElementById('statusFinger').value = "MENCOBA RECONNECT...";
+        });
+
+        client.on('close', function () {
+          console.log("DISCONNECT...");
+          document.getElementById('statusFinger').value = "DISCONNECT...";
+        });
+
+        client.on('offline', function () {
+          console.log("OFFLINE...");
+          document.getElementById('statusFinger').value = "OFFLINE...";
+        });
+      }
+
+      function updateStatusFinger(id_node, id_finger){
+        fetch('/fingerprint/updateStatusFinger', {
+          method: 'POST',
+          headers:{
+            'Content-Type': 'Application/json'
+          },
+          body: JSON.stringify({
+            id_node: id_node,
+            id_finger: id_finger
+          }),
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          if (data.error) {
+            // Periksa console jika ada error
+            console.error(data.error)
+          } else if (data.success) {
+            Swal.fire({
+            icon: 'success',
+            title: 'JARI TERDAFTAR!',
+            text: 'Jari berhasil didaftar!',
+            }).then(() => {
+              window.location.href = '/fingerprint';
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        })
       }
     </script>
     <!-- Kode behaviour halaman -->

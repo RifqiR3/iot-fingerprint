@@ -337,12 +337,12 @@
           const client = mqtt.connect(url, options);
 
           client.on('connect', function() {
+            inputFinger.value = "Menunggu jari...";
               client.subscribe('/finger/fingerMaha', function (err) {
                   if (err) {
                       console.error("Error subscribing:", err);
                       throw err;
                   }
-                  inputFinger.value = "Menunggu jari...";
               });
           });
 

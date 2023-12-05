@@ -57,7 +57,7 @@ router.get('/charts', function(req, res, next) {
 
 router.get('/tables', function(req, res, next) {
     let query = `
-        SELECT id, nama, kelas, NIM FROM datamahasiswa;
+        SELECT id_mahasiswa, nama, kelas, NIM FROM datamahasiswa;
     `;
 
     database.query(query, function(err, data){
@@ -100,8 +100,8 @@ router.post('/addNode', function(req, res, next){
     // Query insert ke datanode
     let query = `
         INSERT INTO datanode
-        (id_node, nama_node, lokasi_node, UID, tgl_daftar)
-        VALUES ('', "${namaNode}", "${lokasiNode}", "${uid}", "${tanggal.toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}")
+        (id_node, nama_node, lokasi_node, UID, tgl_daftar, status_node)
+        VALUES ('', "${namaNode}", "${lokasiNode}", "${uid}", "${tanggal.toLocaleString('id-ID', { timeZone: 'Asia/Makassar' })}", "128")
     `;
 
     database.query(query, function (err, data) {
@@ -154,7 +154,7 @@ router.post('/addUser', function(req, res, next) {
     // Ambil data id_finger
     const id_finger = req.body.id_finger;
     // Cek value id_finger
-    if (id_finger == 0 || id_finger > 127) {
+    if (id_finger <= 0 || id_finger > 127) {
         res.json({zerofinger: true});
         return;
     }
@@ -190,7 +190,6 @@ router.post('/addUser', function(req, res, next) {
 });
 
 router.post('/updateUser', function(req, res, next){
-    console.log(req.body);
     // Ambil data
     const nim = req.body.nim;
     const nama = req.body.nama;
@@ -204,6 +203,27 @@ router.post('/updateUser', function(req, res, next){
     SET datamahasiswa.nama = "${nama}", datamahasiswa.NIM = "${nim}", datamahasiswa.kelas = "${kelas}"
     WHERE datamahasiswa.id_finger = "${id_finger}" AND datanode.UID = "${uid}"`;
     // Jalankan query
+    database.query(query, function(err, data){
+        if (err) {
+            console.error(err);
+            res.status(500).json({error: err});
+        } else {
+            res.json({success: true});
+        }
+    });
+});
+
+router.post('/updateStatusFinger', function(req, res, next){
+    // Ambil data
+    const id_node = req.body.id_node;
+    const id_finger = req.body.id_finger;
+    // Query
+    const query = `
+    UPDATE datamahasiswa
+    SET status_finger = 'ada'
+    WHERE id_finger = ${id_finger} AND id_node = ${id_node};
+    `;
+    // Jalankan Query
     database.query(query, function(err, data){
         if (err) {
             console.error(err);

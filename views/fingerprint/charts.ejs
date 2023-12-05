@@ -239,8 +239,8 @@
                     <td><%= data[index].UID %></td>
                     <td><%= data[index].tgl_daftar %></td>
                     <td>
-                      <!-- Enroll = 1, Kehadiran = 2 -->
-                      <% if(data[index].status_node == 1){ %>
+                      <!-- Enroll = 128, Kehadiran = 129 -->
+                      <% if(data[index].status_node == 128){ %>
                         <button type="button" class="btn btn-success" id="enroll<%= data[index].UID %>">Enroll</button>
                         <button data-toggle="modal" data-target="#modalUpdateStatus<%= index %>" type="button" class="btn btn-outline-dark" id="kehadiran<%= data[index].UID %>">Kehadiran</button>
                       <% } else { %>
@@ -290,10 +290,15 @@
                             </button>
                           </div>
                           <div class="modal-body">
-                            <% if(data[index].status_node == 1){%>
-                              <input name="status" type="number" value="2" hidden>
+                            <!-- 
+                              KODE STATUS NODE:
+                              128 : Enroll
+                              129 : Kehadiran
+                            -->
+                            <% if(data[index].status_node == 128){%>
+                              <input name="status" type="number" value="129" hidden>
                             <% } else { %>
-                              <input name="status" type="number" value="1" hidden>
+                              <input name="status" type="number" value="128" hidden>
                             <% } %>
                             <!-- Form -->
                             <input type="text" value="<%= data[index].UID %>" name="UID" hidden>
@@ -404,6 +409,7 @@
       client.on('connect', function() {
         console.log("Terknoneksi");
         for (let index = 0; index < dataArray.length; index++) {
+          console.log(typeof dataArray[index].status_node);
           client.publish(`/finger/${dataArray[index].UID}`, `${dataArray[index].status_node}`);
           console.log("Berhasil publish ke topic:", `/finger/${dataArray[index].UID}`);
           console.log("Dengan pesan status:", `${dataArray[index].status_node}`);
