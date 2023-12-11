@@ -26,12 +26,12 @@ function clickRow(data) {
     // Jika baris tidak aktif, aktifkan dan ambil datanya didalam
     if (!isActive) {
         document.getElementById('update_user').classList.remove('disabled');
-        document.getElementById('fingerButton').classList.remove('disabled');
         data.classList.add('table-active');
         // Tampilkan konfirmasi table dipilih
         document.getElementById('confirm_row').style.display = 'block';
         // Ambil data dari baris yang dipilih
         let dataKolom = data.getElementsByTagName('td');
+        console.log(dataKolom);
         // Masukkan data baris yang dipilih ke input form 2
         document.getElementById('input_nim').value = dataKolom[3].innerText;
         document.getElementById('input_nama').value = dataKolom[2].innerText;
@@ -39,7 +39,13 @@ function clickRow(data) {
         document.getElementById('input_id_finger').value = dataKolom[0].innerText;
         document.getElementById('input_UID').value = dataKolom[7].innerText;
         document.getElementById('input_id_node').value = dataKolom[8].innerText;
-        document.getElementById('statusFinger').value = 'KLIK TOMBOL UNTUK MENDAFTAR FINGER';
+        // Cek mode node
+        if (dataKolom[9].innerText == "129") {
+          document.getElementById('statusFinger').value = 'NODE INI DALAM MODE ABSENSI';
+        } else {
+          document.getElementById('statusFinger').value = 'KLIK TOMBOL UNTUK MENDAFTAR FINGER';
+          document.getElementById('fingerButton').classList.remove('disabled');
+        }
     }
 }
 

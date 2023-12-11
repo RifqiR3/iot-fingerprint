@@ -3,6 +3,10 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+// Untuk MQTT
+const database = require(path.resolve(__dirname, 'database'));
+const mqtt = require('mqtt');
+require('dotenv').config();
 
 // Server Config
 var port = 3000;
@@ -45,6 +49,50 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// MQTT SETUP ABSENSI START ============================
+// URL
+const url = process.env.URL_HOST 
+// Setup options
+const options = {
+  clean: true,
+  connectTimeout: 4000,
+  clientId: 'webServerFinger',
+  username: 'rifqi',
+  password: 'rifqi123',
+};
+// Koneksi ke broker
+const client = mqtt.connect(url, options);
+// Query database select uid
+const query = `SELECT UID from datanode;`;
+// Jalankan query
+database.query(query, function(err, data){
+  // Jika terkoneksi
+  client.on('connect', function(){
+    console.log("Berhasil terkoneksi ke broker");
+    // Subscribe ke setiap topic
+    for (const topic of data) {
+      client.subscribe(`/finger/${topic.UID}`, function (err) {
+        if (err) {
+          console.error(`Error subscribe ke topic /finger/${topic.UID}`, ":", err);
+          throw err;
+        }
+        console.log(`Berhasil subscribe ke /finger/${topic.UID}`);
+      });
+    }
+  });
+});
+// Jika ada pesan
+client.on('message', function(topic, message){
+  // Ambil uid dari topic yang masuk
+  let uid = topic.split("/").pop();
+  if (message.toString() !== "enroll") {
+    console.log(uid);
+    console.log(message.toString());
+  } 
+});
+// MQTT SETUP ABSENSI END ==============================
+
 
 app.listen(port, host, () => {
   console.log(`Server jalan di: http://${host}:${port}`);

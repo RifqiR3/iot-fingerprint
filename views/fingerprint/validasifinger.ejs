@@ -33,6 +33,9 @@
     />
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- Sweetalert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css">
   </head>
 
   <body id="page-top">
@@ -337,27 +340,42 @@
           const client = mqtt.connect(url, options);
 
           client.on('connect', function() {
-            inputFinger.value = "Menunggu jari...";
-              client.subscribe('/finger/fingerMaha', function (err) {
+              client.subscribe('/finger/4c2004c79931', function (err) {
                   if (err) {
                       console.error("Error subscribing:", err);
                       throw err;
+                  } else {
+                    inputFinger.value = "Menunggu jari...";
                   }
               });
           });
 
           client.on('message', function(topic, message) {
-              if (inputFinger.value === "Menunggu jari...") {
-                  inputFinger.value = "";
+            console.log(message.toString());
+            fetch('/fingerprint/getMahasiswa', {
+              method: 'POST',
+              headers:{
+                'Content-Type': 'Application/json'
+              },
+              body: JSON.stringify({
+                id_node: 2,
+                id_finger: message.toString(),
+              }),
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log(data);
+              if (data.error) {
+                console.log(data.error);
+              } else if (data.success) {
+                console.log(data);
+                Swal.fire({
+                  title: `Anda adalah ${data.nama}`,
+                  icon: "success",
+                  text: `Anda adalah ${data.nama}`
+                })
               }
-              console.log("Pesan:", message.toString());
-              console.log("Topic:", topic);
-              inputFinger.value += message.toString();
-              console.log("inputFinger value:", inputFinger.value);
-
-              // Now, trigger the input event manually
-              var event = new Event('input');
-              inputFinger.dispatchEvent(event);
+            })
           });
       }
 

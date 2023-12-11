@@ -234,4 +234,24 @@ router.post('/updateStatusFinger', function(req, res, next){
     });
 });
 
+router.post('/getMahasiswa', function(req, res, next){
+    // Ambil data
+    const id_node = req.body.id_node;
+    const id_finger = req.body.id_finger;
+    // Query
+    const query = `
+    SELECT nama FROM datamahasiswa WHERE id_node = "${id_node}" AND id_finger = "${id_finger}";
+    `;
+    // Jalankan Query
+    database.query(query, function(err, data){
+        if (err) {
+            console.error(err);
+            res.status(500).json({error: err});
+        } else {
+            console.log(data);
+            res.json({success: true, "nama": data[0].nama});
+        }
+    });
+});
+
 module.exports = router;

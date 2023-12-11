@@ -290,6 +290,7 @@
                         <td><%= dataMhs[index].status_finger %></td>
                         <td hidden><%= dataMhs[index].UID %></td>
                         <td hidden><%= dataMhs[index].id_node %></td>
+                        <td hidden><%= dataMhs[index].status_node %></td>
                       </tr>
                     <% } %>
                   </tbody>
@@ -402,7 +403,6 @@
               showConfirmButton: false,
               showCancelButton: false,
               allowOutsideClick: false,
-              timerProgressBar: true,
             });
           });
         });
