@@ -30,79 +30,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css">
     <!-- MQTT -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+      input::-webkit-outer-spin-button,
+      input::-webkit-inner-spin-button {
+             -webkit-appearance: none;
+              margin: 0;
+      }
+
+      input[type=number] {
+          -moz-appearance: textfield;
+      }
+  </style>
   </head>
 
   <body id="page-top">
     <!-- Page Wrapper -->
     <div id="wrapper">
       <!-- Sidebar -->
-      <ul
-        class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion"
-        id="accordionSidebar"
-      >
-        <!-- Sidebar - Brand -->
-        <a
-          class="sidebar-brand d-flex align-items-center justify-content-center"
-          href="/fingerprint"
-        >
-          <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-laugh-wink"></i>
-          </div>
-          <div class="sidebar-brand-text mx-3">Monitoring</div>
-        </a>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider my-0" />
-
-        <!-- Nav Item - Dashboard -->
-        <li class="nav-item active">
-          <a class="nav-link" href="/fingerprint">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>Monitor</span></a
-          >
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider" />
-
-        <!-- Nav Item - Charts -->
-        <li class="nav-item">
-          <a class="nav-link" href="/fingerprint/charts">
-            <i class="fas fa-fw fa-chart-area"></i>
-            <span>Device</span></a
-          >
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider" />
-
-        <!-- Nav Item - Tables -->
-        <li class="nav-item">
-          <a class="nav-link" href="/fingerprint/tables">
-            <i class="fas fa-fw fa-table"></i>
-            <span>Tabel</span></a
-          >
-        </li>
-
-        <hr class="sidebar-divider" />
-
-        <!-- Nav Item - Tables -->
-        <li class="nav-item active">
-          <a class="nav-link" href="/fingerprint/daftar">
-            <i class="fas fa-fw fa-table"></i>
-            <span>Fingerprint</span>
-          </a>
-        </li>
-
-        <!-- Divider -->
-        <hr class="sidebar-divider d-none d-md-block" />
-
-        <!-- Sidebar Toggler (Sidebar) -->
-        <div class="text-center d-none d-md-inline">
-          <button class="rounded-circle border-0" id="sidebarToggle"></button>
-        </div>
-
-      </ul>
+      <%- include('../sidebar'); %>
       <!-- End of Sidebar -->
 
       <!-- Content Wrapper -->
@@ -242,13 +188,20 @@
                 <form id="updateForm">
                   <h5 class="font-weight-bold">2. User Info</h5>
                   <div class="mb-3">
-                    <input id="input_nim" name="nim" placeholder="NIM..." type="text" class="form-control">
+                    <input id="input_nim" name="nim" placeholder="NIM..." type="number" class="form-control">
                   </div>
                   <div class="mb-3">
                     <input id="input_nama" name="nama" placeholder="Nama..." type="text" class="form-control">
                   </div>
                   <div class="mb-3">
-                    <input id="input_kelas" name="kelas" placeholder="Kelas..." type="text" class="form-control">
+                    <select name="kelas" class="form-select" id="selectKelas">
+                      <% for( let index = 0; index < dataKelas.length; index++ ) { %>
+                        <% if (dataKelas[index].kelas == "empty") { %>
+                          <% continue; %>
+                        <% } %>
+                        <option value="<%= dataKelas[index].id %>"><%= dataKelas[index].kelas %></option>
+                      <% } %>
+                    </select>
                   </div>
                   <input id="input_id_finger" name="input_id_finger" type="text" hidden>
                   <input id="input_UID" name="input_UID" type="text" hidden>
