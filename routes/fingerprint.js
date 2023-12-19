@@ -82,9 +82,14 @@ router.get("/kelas", function (req, res, next) {
 router.get("/kelasDet", function (req, res, next) {
   // Ambil data id
   const id = req.query.id;
+  const id_node = [
+    {
+      id_node: id,
+    },
+  ];
   // Query
   const query = `
-    SELECT datajadwal.id_matkul, datajadwal.id_hari, datajadwal.id_kelas , datajadwal.waktu_mulai, datajadwal.waktu_selesai, datamatkul.matkul, datanode.id_node, datanode.lokasi_node, datakelas.kelas FROM datajadwal 
+    SELECT datajadwal.id, datajadwal.id_matkul, datajadwal.id_hari, datajadwal.id_kelas , datajadwal.waktu_mulai, datajadwal.waktu_selesai, datamatkul.matkul, datanode.id_node, datanode.lokasi_node, datakelas.kelas FROM datajadwal 
     INNER JOIN datamatkul ON datajadwal.id_matkul = datamatkul.id 
     INNER JOIN datanode ON datajadwal.id_node = datanode.id_node
     INNER JOIN datakelas ON datajadwal.id_kelas = datakelas.id
@@ -93,13 +98,6 @@ router.get("/kelasDet", function (req, res, next) {
   database.query(query, function (err, data) {
     if (err) {
       throw err;
-    }
-
-    if (data.length == 0) {
-      res.render("fingerprint/kelasDet", {
-        kosong: true,
-        title: "Kosong",
-      });
     } else {
       const queryMatkul = `SELECT * FROM datamatkul`;
       database.query(queryMatkul, function (err2, datamatkul) {
@@ -110,6 +108,15 @@ router.get("/kelasDet", function (req, res, next) {
           database.query(queryKelas, function (err3, dataKelas) {
             if (err3) {
               throw err3;
+            }
+            if (data.length == 0) {
+              res.render("fingerprint/kelasDet", {
+                kosong: true,
+                title: "Kosong",
+                data: id_node,
+                datamatkul: datamatkul,
+                datakelas: dataKelas,
+              });
             } else {
               res.render("fingerprint/kelasDet", {
                 kosong: false,
@@ -137,24 +144,31 @@ router.post("/addJadwal", function (req, res, next) {
     waktu_keluar: req.body.waktu_keluar,
   };
   console.log(data);
-  // Query Ribettttttt
+  // Query ribet
   const query = `
   INSERT INTO datajadwal (id, id_node, id_matkul, id_kelas, id_hari, waktu_mulai, waktu_selesai)
-  SELECT '', ${data.id_node}, ${data.id_matkul}, ${data.id_kelas}, ${data.id_hari}, '${data.waktu_masuk}:00', '${data.waktu_keluar}:00'
+  SELECT '', ${data.id_node}, ${data.id_matkul}, ${data.id_kelas}, ${data.id_hari}, '${data.waktu_masuk}', '${data.waktu_keluar}'
   FROM dual
   WHERE NOT EXISTS (
-    SELECT 1 FROM datajadwal
-    WHERE id_node = ${data.id_node}
-    AND id_kelas = ${data.id_kelas}
-    AND id_matkul = ${data.id_matkul}
-    AND id_hari = ${data.id_hari}
-    AND (
-      ('${data.waktu_masuk}:00' BETWEEN waktu_mulai AND waktu_selesai)
-      OR ('${data.waktu_keluar}:00' BETWEEN waktu_mulai AND waktu_selesai)
-      OR (waktu_mulai BETWEEN '${data.waktu_masuk}:00' AND '${data.waktu_keluar}:00')
+    SELECT 1
+    FROM datajadwal
+    WHERE (id_node = ${data.id_node} AND id_kelas = ${data.id_kelas} AND id_matkul = ${data.id_matkul} AND
+      (('${data.waktu_masuk}' BETWEEN waktu_mulai AND waktu_selesai)
+      OR ('${data.waktu_keluar}' BETWEEN waktu_mulai AND waktu_selesai)
+      OR (waktu_mulai BETWEEN '${data.waktu_masuk}' AND '${data.waktu_keluar}')
+      OR (waktu_selesai BETWEEN '${data.waktu_masuk}' AND '${data.waktu_keluar}'))
     )
-  )
+    OR (id_node = ${data.id_node} AND id_hari = ${data.id_hari} AND
+      (('${data.waktu_masuk}' BETWEEN waktu_mulai AND waktu_selesai)
+      OR ('${data.waktu_keluar}' BETWEEN waktu_mulai AND waktu_selesai)
+      OR (waktu_mulai BETWEEN '${data.waktu_masuk}' AND '${data.waktu_keluar}')
+      OR (waktu_selesai BETWEEN '${data.waktu_masuk}' AND '${data.waktu_keluar}'))
+    )
+    OR (id_matkul = ${data.id_matkul} AND id_kelas = ${data.id_kelas})
+  );
   `;
+
+  console.log(query);
   database.query(query, function (err, data) {
     if (err) {
       throw err;
@@ -162,12 +176,29 @@ router.post("/addJadwal", function (req, res, next) {
       // Cek duplikasi jadwal
       const baris = data.affectedRows;
       if (baris > 0) {
-        res.status(201).json({ message: "Data inserted successfully" });
+        res.json({
+          berhasil: true,
+          message: "Jadwal berhasil dimasukkan",
+        });
       } else {
-        res
-          .status(400)
-          .json({ message: "No rows inserted. Check your conditions." });
+        res.json({
+          berhasil: false,
+          message: "Sepertinya ada jadwal kelas yang bertabrakan :(",
+        });
       }
+    }
+  });
+});
+
+router.post("/deleteJadwal", function (req, res, next) {
+  // Ambil data
+  const id_jadwal = req.body.id_jadwal;
+  const query = `DELETE FROM datajadwal WHERE id = ${id_jadwal}`;
+  database.query(query, function (err, data) {
+    if (err) {
+      throw err;
+    } else {
+      res.json({ success: true, id: id_jadwal });
     }
   });
 });

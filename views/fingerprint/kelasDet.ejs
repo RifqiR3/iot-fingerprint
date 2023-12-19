@@ -144,9 +144,10 @@
             <div class="d-sm-flex align-items-center justify-content-between mb-4">
                 <% if (kosong == true) { %>
                     <h1>Jadwal kelas ini masih kosong</h1>
+                    <br>
+                    <button onclick="addJadwal()" type="button" class="btn btn-outline-success">Tambah Jadwal</button>
                 <% } else { %>
                     <h1 class="h3 mb-0 text-gray-800">Jadwal <%= data[0].lokasi_node %></h1>
-                    
                     <select class="form-select" aria-label="Default select example" id="select_hari">
                         <option selected>Pilih Hari</option>
                         <% let hariUnik = {}; %>
@@ -164,9 +165,9 @@
             </div>
         </div>        
         <div class="p-3">
-            <button onclick="addJadwal()" type="button" class="btn btn-outline-success">Tambah Jadwal</button>
+              <button onclick="addJadwal()" type="button" class="btn btn-outline-success">Tambah Jadwal</button>
               <!-- Table -->
-              <table class="table">
+              <table class="table" id="jadwalTable">
                 <thead>
                   <tr>
                     <th scope="col" class="text-center">Hari</th>
@@ -174,16 +175,23 @@
                     <th scope="col">Kelas</th>
                     <th scope="col">Waktu Mulai</th>
                     <th scope="col">Waktu Selesai</th>
+                    <th scope="col">Config</th>
                   </tr>
                 </thead>
                 <tbody>
                     <% for( let index = 0; index < data.length; index++ ) { %>
-                        <tr class="hari<%= data[index].id_hari %>">
+                        <tr style="cursor: pointer;" onclick="configJadwal(this)" class="hari<%= data[index].id_hari %>">
                             <td class="text-center"><%= data[index].id_hari %></td>
+                            <td hidden><%= data[index].id_matkul %></td>
                             <td><%= data[index].matkul %></td>
+                            <td hidden><%= data[index].id_kelas %></td>
                             <td><%= data[index].kelas %></td>
                             <td><%= data[index].waktu_mulai %></td>
                             <td><%= data[index].waktu_selesai %></td>
+                            <td hidden><%= data[index].id %></td>
+                            <td>
+                              <button type="button" class="btn btn-outline-info">Edit</button>
+                            </td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -247,9 +255,18 @@
         </div>
       </div>
     </div>
-    
     <script>
       let hari = document.getElementById('select_hari');
+      let options = hari.options;
+      let sortedOptions = Array.from(options).sort(function (a, b) {
+        return a.value - b.value;
+      });
+      while (hari.firstChild) {
+        hari.removeChild(hari.firstChild);
+      }
+      sortedOptions.forEach(function (option) {
+        hari.appendChild(option);
+      });
       hari.addEventListener("change", function(){
         if (hari.value != "Pilih Hari") {
           document.querySelectorAll('table tbody tr').forEach(row => {
@@ -267,6 +284,39 @@
           });
         }
       });
+
+      sortTableRows();
+
+      function sortTableRows() {
+        let table = document.getElementById('jadwalTable');
+        let tbody = table.querySelector('tbody');
+
+        let rows = Array.from(tbody.getElementsByTagName('tr'));
+        let sortedRows = rows.sort(function (a, b) {
+          let aValue = parseInt(a.cells[0].innerText);
+          let bValue = parseInt(b.cells[0].innerText);
+          return aValue - bValue;
+        });
+
+        while (tbody.firstChild) {
+          tbody.removeChild(tbody.firstChild);
+        }
+
+        sortedRows.forEach(function (row) {
+          tbody.appendChild(row);
+         
+          row.addEventListener('mouseover', function () {
+            row.classList.add('table-active');
+          });
+
+          row.addEventListener('mouseout', function () {
+            row.classList.remove('table-active');
+          });
+        });
+      }
+    </script>
+  <% } %>
+    <script>
       // Set Matkul
       const matkulArray = "<%- datamatkul.map(item => `<option value='${item.id}'>${item.matkul}</option>`) %>";
       // Set hari
@@ -331,8 +381,16 @@
           allowOutsideClick: () => !Swal.isLoading()
         }).then((result) => {
           if (result.isConfirmed) {
-            console.log(result);
-            sendJadwal(result.value.matkulForm, result.value.hariForm, result.value.kelasForm, "<%- data[0].id_node %>", result.value.waktuMasuk, result.value.waktuKeluar);
+            if (result.value.waktuMasuk == "" || result.value.waktuKeluar == "" || result.value.waktuMasuk > result.value.waktuKeluar) {
+              Swal.fire({
+                icon: "error",
+                title: "ERROR!",
+                text: "Waktu yang dimasukkan tidak valid!"
+              })
+            } else {
+              console.log(result);
+              sendJadwal(result.value.matkulForm, result.value.hariForm, result.value.kelasForm, "<%- data[0].id_node %>", result.value.waktuMasuk, result.value.waktuKeluar);
+            }
           }
         });
       }
@@ -349,17 +407,124 @@
             id_hari: data[1],
             id_kelas: data[2],
             id_node: data[3],
-            waktu_masuk: data[4],
-            waktu_keluar: data[5],
+            waktu_masuk: data[4]+":00",
+            waktu_keluar: data[5]+":00",
           }),
         })
         .then(response => response.json())
         .then(data => {
           console.log(data);
+          if (data.berhasil) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Berhasil',
+              text: data.message
+            }).then(() => {
+              window.location.reload();
+            })
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'GAGAL',
+              text: data.message
+            })
+          }
         });
       }
+
+      function configJadwal(data){
+        // Ambil data dari baris yang dipilih pakai query selector, yang dipilih kecuali button
+        const cells = data.querySelectorAll('td:not(:last-child)');
+        // Siapkan array sebagai penampung data baris
+        const values = [];
+        // Iterasi setiap kolom terus ambil innerText nya kemudian masukkan ke dalam array
+        cells.forEach(cell => {
+            values.push(cell.innerText.trim()); // trim dipake supaya tidak ada whitespace
+        });
+        // Panggil fungsi kirim config
+        sendConfigJadwal(values);
+      }
+
+      function sendConfigJadwal(datas){
+        console.log(datas);
+        const dataMatkulValue = datas[1];
+        const dataHariValue = datas[0];
+        const dataKelasValue = datas[3];
+        Swal.fire({
+          title: 'Edit / Hapus Jadwal',
+          showDenyButton: true,
+          showCancelButton: true,
+          confirmButtonText: "Edit",
+          denyButtonText: "Hapus",
+          cancelButtonText: "Batal",
+          confirmButtonColor: "#3085d6",
+          html:`
+          <label class="form-label">Mata Kuliah:</label>
+          <select class="form-select" id="matkulform">
+            ${matkulArray}
+          </select>
+          <br>
+            <label class="form-label">Hari:</label>
+            <select class="form-select" id="hariform">
+              ${hariArray}    
+            </select>
+          <br>
+          <label class="form-label">Kelas:</label>
+          <select class="form-select" id="kelasform">
+            ${kelasArray}
+          </select>
+          <br>
+          <label class="form-label">Waktu Masuk:</label>
+          <input type="time" class="form-control" id="waktumasuk" required />
+          <br>
+          <label class="form-label">Waktu Keluar:</label>
+          <input type="time" class="form-control" id="waktukeluar" required />
+          `,
+          preConfirm: () => {
+            const matkulForm = document.getElementById('matkulform').value;
+            const hariForm = document.getElementById('hariform').value;
+            const kelasForm = document.getElementById('kelasform').value;
+            const waktuMasuk = document.getElementById('waktumasuk').value;
+            const waktuKeluar = document.getElementById('waktukeluar').value;
+            return { matkulForm, hariForm, kelasForm, waktuMasuk, waktuKeluar};
+          },
+          preDeny: () => {
+            fetch('/fingerprint/deleteJadwal', {
+              method: "POST",
+              headers: {
+                'Content-Type': 'Application/json'
+              },
+              body: JSON.stringify({
+                id_jadwal: datas[7]
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                Swal.fire({
+                  icon: "success",
+                  title: "BERHASIL",
+                  text: `Jadwal dengan ID - ${data.id} berhasil dihapus`
+                }).then(() => {
+                  window.location.reload();
+                })
+              }
+            })
+          },
+        })
+        .then(result => {
+          console.log(result);
+        });
+        
+        document.getElementById("matkulform").value = dataMatkulValue;
+        document.getElementById("hariform").value = dataHariValue;
+        document.getElementById("kelasform").value = dataKelasValue;
+        document.getElementById("waktumasuk").value = datas[5];
+        document.getElementById("waktukeluar").value = datas[6];
+
+      }
     </script>
-    <% } %>
+    
     <!-- Bootstrap core JavaScript-->
     <script src="../stylesheets/vendor/jquery/jquery.min.js"></script>
     <script src="../stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
