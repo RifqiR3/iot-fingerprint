@@ -154,154 +154,36 @@
                   >
                   <thead>
                     <tr>
-                      <th>No</th>
+                      <th>No.Absen</th>
+                      <th>NIM</th>
                       <th>Mahasiswa</th>
                       <th>Ruangan</th>
+                      <th>Mata Kuliah</th>
+                      <th>Hari</th>
+                      <th>Tanggal</th>
                       <th>Absen In</th>
                       <th>Absen Out</th>
+                      <th>Waktu Terlambat</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                      <td></td>
-                    </tr>
+                    <% for (let index = 0; index < data.length; index++) { %>
+                      <tr>
+                        <td><%= data[index].id_absen %></td>
+                        <td><%= data[index].NIM %></td>
+                        <td><%= data[index].nama %></td>
+                        <td><%= data[index].lokasi_node %></td>
+                        <td><%= data[index].matkul %></td>
+                        <td><%= data[index].hari %></td>
+                        <td><%= data[index].tanggal %></td>
+                        <td><%= data[index].absen_in %></td>
+                        <td><%= data[index].absen_out %></td>
+                        <td><%= data[index].waktu_terlambat %></td>
+                      </tr>
+                    <% } %> 
                   </tbody>
                   </table>
-                  <ul>
-                  </ul>
-                  
-
-                  
-            <div class="card shadow mb-4">
-              <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                  Tabel Mahasiswa
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="table-responsive">
-                  <div class="card-body">
-                    <div class="table-responsive">
-                      <table
-                        class="table table-bordered"
-                        id="dataTable"
-                        width="100%"
-                        cellspacing="0"
-                      >
-                    <thead>
-                      <tr>
-                        <th>No</th>
-                        <th>Nama</th>
-                        <th>NIM</th>
-                        <th>Kelas</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <% for (let index = 0; index < data.length; index++) { %>
-                        <tr>
-                          <td><%= data[index].id_mahasiswa %></td>
-                          <td><%= data[index].nama %></td>
-                          <td><%= data[index].NIM %></td>
-                          <td><%= data[index].kelas %></td>
-                        </tr>
-                      <% } %>                      
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">
-            Tabel Ruangan
-          </h6>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <div class="card-body">
-              <div class="table-responsive">
-                <table
-                  class="table table-bordered"
-                  id="dataTable"
-                  width="100%"
-                  cellspacing="0"
-                >
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Ruangan</th>
-                  <th>Kelas</th>
-                  <th>Kampus</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </div>
-    </div>
-        
-        <div class="card shadow mb-4">
-          <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-              Tabel Jadwal
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <div class="card-body">
-                <div class="table-responsive">
-                  <table
-                    class="table table-bordered"
-                    id="dataTable"
-                    width="100%"
-                    cellspacing="0"
-                  >
-                <thead>
-                  <tr>
-                    <th>No</th>
-                    <th>Jadwal</th>
-                    <th>Ruangan</th>
-                    <th>Kelas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-        
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      
-
-
-        
-
-
         <!-- Footer -->
         <footer class="sticky-footer bg-white">
           <div class="container my-auto">

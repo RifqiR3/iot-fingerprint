@@ -158,6 +158,7 @@
               <table class="table">
                 <thead>
                   <tr>
+                    <th scope="col">ID_Node</th>
                     <th scope="col">Nama Node</th>
                     <th scope="col">Lokasi Node</th>
                     <th scope="col">UID</th>
@@ -169,6 +170,7 @@
                 <tbody>
                   <% for (let index = 0; index < data.length; index++) { %>
                   <tr>
+                    <td><%= data[index].id_node %></td>
                     <td><%= data[index].nama_node %></td>
                     <td><%= data[index].lokasi_node %></td>
                     <td><%= data[index].UID %></td>

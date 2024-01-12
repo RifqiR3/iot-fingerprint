@@ -70,46 +70,12 @@ router.get("/kelas", function (req, res, next) {
   database.query(query, function (err, data) {
     if (err) {
       throw err;
-    }
-    const queryMatkul = "SELECT * FROM datamatkul";
-    database.query(queryMatkul, function (err2, datamatkul) {
-      if (err2) {
-        throw err2;
-      }
+    } else {
       res.render("fingerprint/kelas", {
         title: "Kelas",
         data: data,
-        datamatkul: datamatkul,
       });
-    });
-  });
-});
-
-router.post("/addMatkul", function (req, res, next) {
-  const matkul = req.body.matkul;
-  const query = `INSERT INTO datamatkul VALUES ('', "${matkul}")`;
-  database.query(query, function (err, data) {
-    if (err) {
-      throw err;
     }
-    res.json({
-      berhasil: true,
-      message: "Jadwal berhasil dimasukkan",
-    });
-  });
-});
-
-router.post("/deleteMatkul", function (req, res, next) {
-  const id_matkul = req.body.id_matkul;
-  const query = `DELETE FROM datamatkul WHERE id_matkul = ${id_matkul}`;
-  database.query(query, function (err, data) {
-    if (err) {
-      throw err;
-    }
-    res.json({
-      berhasil: true,
-      message: "Matkul berhasil dihapus!",
-    });
   });
 });
 
@@ -124,7 +90,7 @@ router.get("/kelasDet", function (req, res, next) {
   // Query
   const query = `
     SELECT datajadwal.id, datajadwal.id_matkul, datajadwal.id_hari, datajadwal.id_kelas , datajadwal.waktu_mulai, datajadwal.waktu_selesai, datamatkul.matkul, datanode.id_node, datanode.lokasi_node, datakelas.kelas FROM datajadwal 
-    INNER JOIN datamatkul ON datajadwal.id_matkul = datamatkul.id_matkul
+    INNER JOIN datamatkul ON datajadwal.id_matkul = datamatkul.id 
     INNER JOIN datanode ON datajadwal.id_node = datanode.id_node
     INNER JOIN datakelas ON datajadwal.id_kelas = datakelas.id
     WHERE datajadwal.id_node = ${id};`;
@@ -308,27 +274,7 @@ router.post("/updateJadwal", function (req, res, next) {
 
 router.get("/tables", function (req, res, next) {
   let query = `
-    SELECT
-      a.id_absen,
-      m.nama,
-      m.NIM,
-      n.lokasi_node,
-      h.hari,
-      c.matkul,
-      a.tanggal,
-      a.absen_in,
-      a.absen_out,
-      a.waktu_terlambat
-    FROM
-      dataabsen a
-    INNER JOIN
-      datamahasiswa m ON a.id_mahasiswa = m.id_mahasiswa
-    INNER JOIN
-      datamatkul c ON a.id_matkul = c.id_matkul
-    INNER JOIN
-      datanode n ON a.id_node = n.id_node
-    INNER JOIN 
-      datahari h ON a.id_hari = h.id_hari;
+        SELECT id_mahasiswa, nama, id_kelas, NIM FROM datamahasiswa;
     `;
 
   database.query(query, function (err, data) {
@@ -571,15 +517,14 @@ router.post("/absen", function (req, res, next) {
       }
       const waktuTerlambat = checkLateTime(time, checkMatkul[0].waktu_mulai);
       const queryInsertAbsen = `
-      IF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}') = '00:00:00' THEN
-        UPDATE dataabsen SET absen_out = '${time}' WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}';
-      ELSEIF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}') != '00:00:00' THEN
+      IF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND tanggal = '${todayFullDate}') = '00:00:00' THEN
+        UPDATE dataabsen SET absen_out = '${time}' WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND tanggal = '${todayFullDate}';
+      ELSEIF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND tanggal = '${todayFullDate}') != '00:00:00' THEN
         SELECT id_absen FROM dataabsen WHERE id_absen = 0;
       ELSE
         INSERT INTO dataabsen (id_absen, id_mahasiswa, id_node, id_hari, id_matkul, tanggal, absen_in, absen_out, waktu_terlambat)
         VALUES ('', ${check[0].id_mahasiswa}, ${check[0].id_node}, ${today}, ${checkMatkul[0].id_matkul}, '${todayFullDate}', '${time}', '00:00:00', '${waktuTerlambat}');
       END IF`;
-      console.log(queryInsertAbsen);
       database.query(queryInsertAbsen, function (err3, insertAbsen) {
         console.log(insertAbsen);
         if (err3) {
@@ -587,23 +532,24 @@ router.post("/absen", function (req, res, next) {
         }
         const queryCheckColumn = `
         SELECT * FROM dataabsen 
-        WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}'
+        WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND tanggal = '${todayFullDate}';
         `;
         database.query(queryCheckColumn, function (err4, checkColumn) {
+          console.log(checkColumn);
           if (err4) {
             throw err4;
           } else if (checkColumn[0].absen_out == "00:00:00") {
-            console.log(checkColumn[0].absen_out);
             return res.json({
-              status: `Halo ${check[0].nama}, kelas ini sudah dimulai dan anda terlambat sekitar ${waktuTerlambat}`,
+              status: `Selamat datang ${check[0].nama}, kelas ini sudah dimulai dan anda terlambat sekitar ${waktuTerlambat}`,
             });
-          } else if (insertAbsen[1]) {
-            console.log(insertAbsen[1]);
+          } else if (
+            checkColumn[0].absen_out != "00:00:00" &&
+            checkColumn[0].absen_in != "00:00:00"
+          ) {
             return res.json({
               status: `Sepertinya anda sudah absen dua kali, silahkan tunggu kelas berikutnya`,
             });
-          } else if (checkColumn[0].absen_out != "00:00:00") {
-            console.log(checkColumn[0].absen_out);
+          } else {
             return res.json({
               status: `Halo ${check[0].nama}, anda keluar di waktu ${checkColumn[0].absen_out}`,
             });

@@ -318,7 +318,7 @@
   <% } %>
     <script>
       // Set Matkul
-      const matkulArray = "<%- datamatkul.map(item => `<option value='${item.id}'>${item.matkul}</option>`) %>";
+      const matkulArray = "<%- datamatkul.map(item => `<option value='${item.id_matkul}'>${item.matkul}</option>`) %>";
       // Set hari
       const hariArr = [{
         id_hari: 1,
@@ -413,7 +413,6 @@
         })
         .then(response => response.json())
         .then(data => {
-          console.log(data);
           if (data.berhasil) {
             Swal.fire({
               icon: 'success',
@@ -513,7 +512,41 @@
           },
         })
         .then(result => {
-          console.log(result);
+          if (result.isConfirmed) {
+            fetch('/fingerprint/updateJadwal', {
+              method: "POST",
+              headers: {
+                'Content-Type': 'Application/json',
+              },
+              body: JSON.stringify({
+                id_node: "<%- data[0].id_node %>",
+                id_jadwal: datas[7],
+                id_hari: result.value.hariForm,
+                id_matkul: result.value.matkulForm,
+                id_kelas: result.value.kelasForm,
+                waktu_mulai: result.value.waktuMasuk,
+                waktu_selesai: result.value.waktuKeluar,
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.berhasil) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Berhasil',
+                  text: data.message
+                }).then(() => {
+                  window.location.reload();
+                })
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'GAGAL',
+                  text: data.message
+                })
+              }
+            });
+          }
         });
         
         document.getElementById("matkulform").value = dataMatkulValue;

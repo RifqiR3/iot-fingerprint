@@ -140,14 +140,54 @@
 
           <!-- Begin Page Content -->
           <div class="container-fluid">
-            <!-- Page Heading -->
-            <div class="d-sm-flex align-items-center justify-content-between mb-4">
-              <h1 class="h3 mb-0 text-gray-800">Kelas</h1>
+            <div class="row">
+              <div class="col-sm-6">
+                <!-- Page Heading -->
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                  <h1 class="h3 mb-0 text-gray-800">Daftar Kelas</h1>
+                </div>
+                <div class="list-group">
+                  <% for( let index = 0; index < data.length; index++ ) { %>
+                    <a href="/fingerprint/kelasDet?id=<%= data[index].id_node %>" class="list-group-item list-group-item-action"><%= data[index].lokasi_node %></a>
+                  <% } %>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                      <h1 class="h3 mb-0 text-gray-800">Daftar Matkul</h1>
+                    </div>
+                  </div>
+                  <div class="col-sm-6">
+                    <button onclick="addMatkul()" type="button" class="btn btn-outline-success">Tambah Matkul</button>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <table
+                    class="table table-bordered"
+                    id="dataTable"
+                    width="100%"
+                    cellspacing="0"
+                  >
+                    <thead>
+                      <tr>
+                        <th>ID Matkul</th>
+                        <th>Matkul</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% for (let index = 0; index < datamatkul.length; index++) { %>
+                      <tr onmouseover="highlightRow(this)" onmouseout="unhighlightRow(this)" onclick="handleClick(this)"">
+                        <td><%= datamatkul[index].id_matkul %></td>
+                        <td><%= datamatkul[index].matkul %></td>
+                      </tr>
+                      <% } %> 
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-            <% for( let index = 0; index < data.length; index++ ) { %>
-              <a href="/fingerprint/kelasDet?id=<%= data[index].id_node %>"><%= data[index].lokasi_node %></a>
-              <br>
-            <% } %>
           </div>
 
         <!-- Footer -->
@@ -207,12 +247,124 @@
         </div>
       </div>
     </div>
+    <script>
+      function highlightRow(row) {
+        row.classList.add("table-active");
+        row.style.cursor = "pointer";
+      }
+
+      function unhighlightRow(row) { 
+        row.classList.remove("table-active");
+      }
+
+      function handleClick(row) {
+        let idMatkul = row.cells[0].textContent;
+        let matkul = row.cells[1].textContent;
+        
+        Swal.fire({
+          icon: "warning",
+          title: "HAPUS?",
+          text: "Anda yakin mau menghapus matkul ini?",
+          showCancelButton: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            deleteMatkul(idMatkul);
+          }
+        });
+      }
+    </script>
+    <script>
+      function addMatkul(){
+        Swal.fire({
+          icon: "question",
+          title: "Tambah Matkul",
+          html: `
+          <label class="form-label">Matkul:</label>
+          <input type="text" class="form-control" id="matkul" required />`,
+          showCancelButton: true,
+          preConfirm: () => {
+            const matkul = document.getElementById('matkul').value;
+            return matkul
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            fetch("/fingerprint/addMatkul", {
+              method: "POST",
+              headers: {
+                'Content-Type': 'Application/json'
+              },
+              body: JSON.stringify({
+                matkul: result.value
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if(data.berhasil){
+                Swal.fire({
+                  icon: 'success',
+                  title: 'BERHASIL',
+                  text: "Matkul berhasil dimasukkan!"
+                }).then(() => {
+                  window.location.reload();
+                })
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: "GAGAL",
+                  text: "Terjadi kegagalan"
+                })
+              }
+            })
+          }
+        });
+      }
+
+      function deleteMatkul(id){
+        fetch("/fingerprint/deleteMatkul", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'Application/json'
+          },
+          body: JSON.stringify({
+            id_matkul: id
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.berhasil) {
+            Swal.fire({
+              icon: 'success',
+              title: "BERHASIL",
+              text: "Matkul berhasil dihapus"
+            })
+            .then(() => {
+              window.location.reload();
+            })
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'GAGAL',
+              text: "Terjadi kegagalan"
+            })
+          }
+        })
+      }
+    </script>
     <!-- Bootstrap core JavaScript-->
-    <script src="../stylesheets/vendor/jquery/jquery.min.js"></script>
-    <script src="../stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/stylesheets/vendor/jquery/jquery.min.js"></script>
+    <script src="/stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
     <!-- Core plugin JavaScript-->
-    <script src="../stylesheets/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="/stylesheets/vendor/jquery-easing/jquery.easing.min.js"></script>
+
     <!-- Custom scripts for all pages-->
-    <script src="../stylesheets/js/sb-admin-2.min.js"></script>
+    <script src="/stylesheets/js/sb-admin-2.min.js"></script>
+
+    <!-- Page level plugins -->
+    <script src="/stylesheets/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="/stylesheets/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+    <!-- Page level custom scripts -->
+    <script src="/stylesheets/js/demo/datatables-demo.js"></script>
   </body>
 </html>

@@ -10,7 +10,12 @@ const interfaces = os.networkInterfaces();
 
 // Server Config
 var port = 3000;
-const host = interfaces["Wi-Fi"][1].address;
+let host;
+interfaces["Wi-Fi"].forEach(function (config) {
+  if (config.family == "IPv4") {
+    host = config.address;
+  }
+});
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
@@ -49,7 +54,7 @@ app.use(function (err, req, res, next) {
 });
 
 app.listen(port, host, () => {
-  console.log(`Server jalan di: http://${host}:${port}`);
+  console.log(`Server jalan di: http://${host}:${port}/fingerprint`);
 });
 
 module.exports = app;
