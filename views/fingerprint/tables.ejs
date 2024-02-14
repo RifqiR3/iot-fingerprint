@@ -31,6 +31,13 @@
       href="/stylesheets/vendor/datatables/dataTables.bootstrap4.min.css"
       rel="stylesheet"
     />
+
+    <!-- Sweetalert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.all.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.0/dist/sweetalert2.min.css"
+    />
   </head>
 
   <body id="page-top">
@@ -140,9 +147,16 @@
             <!-- DataTales Example -->
             <div class="card shadow mb-4">
               <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                  Tabel Absensi
-                </h6>
+                <div class="row">
+                  <div class="col-sm-6">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                      TABEL ABSENSI
+                    </h6>
+                  </div>
+                  <div class="col-sm-6 text-right">
+                    <button onclick="pilihDownload()" type="button" class="btn btn-outline-success"><i class="fas fa-download"></i> Download</button>
+                  </div>
+                </div>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
@@ -157,6 +171,7 @@
                       <th>No.Absen</th>
                       <th>NIM</th>
                       <th>Mahasiswa</th>
+                      <th>Kelas</th>
                       <th>Ruangan</th>
                       <th>Mata Kuliah</th>
                       <th>Hari</th>
@@ -168,10 +183,11 @@
                   </thead>
                   <tbody>
                     <% for (let index = 0; index < data.length; index++) { %>
-                      <tr>
+                      <tr onmouseover="highlightRow(this)" onmouseout="unhighlightRow(this)" onclick="handleClick(this)">
                         <td><%= data[index].id_absen %></td>
                         <td><%= data[index].NIM %></td>
                         <td><%= data[index].nama %></td>
+                        <td><%= data[index].kelas %></td>
                         <td><%= data[index].lokasi_node %></td>
                         <td><%= data[index].matkul %></td>
                         <td><%= data[index].hari %></td>
@@ -242,9 +258,88 @@
       </div>
     </div>
 
+    <script>
+      function highlightRow(row) {
+        row.classList.add("table-active");
+        row.style.cursor = "pointer";
+      }
+
+      function unhighlightRow(row) { 
+        row.classList.remove("table-active");
+      }
+
+      function handleClick(row) {
+        let NIM = row.cells[1].textContent;
+        
+        Swal.fire({
+          icon: "question",
+          title: "DOWNLOAD?",
+          text: "Anda ingin download rekapan absen mahasiswa ini?",
+          showCancelButton: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            downloadRekap(NIM);
+          }
+        });
+      }
+
+      function pilihDownload(){
+        // Set Kelas
+        const kelasArray = "<%- datakelas.map(kelas => `<option value='${kelas.id_kelas}'>${kelas.kelas}</option>`) %>";
+
+        Swal.fire({
+          icon: "question",
+          title: "Pilih Kelas",
+          showCloseButton: true,
+          allowOutsideClick: false,
+          html:`
+          <select class="form-select" id="kelasform">
+            ${kelasArray}    
+          </select>
+          <br>
+          <br>
+          <label class="form-label">Tanggal Awal:</label>
+          <input type="date" class="form-control" id="tglawal" required />
+          <br>
+          <label class="form-label">Tanggal Akhir:</label>
+          <input type="date" class="form-control" id="tglakhir" required />
+          `,
+          preConfirm: () => {
+            const kelasValue = document.getElementById('kelasform').value;
+            const tglAwal = document.getElementById('tglawal').value;
+            const tglAkhir = document.getElementById('tglakhir').value;
+            return {kelasValue, tglAwal, tglAkhir};
+          }
+        })
+        .then((result => {
+          if (result.isConfirmed) {
+            if (result.value.tglAwal == "" && result.value.tglAkhir == "" || (result.value.tglAwal > result.value.tglAkhir)) {
+              Swal.fire({
+                icon: 'error',
+                title: 'ERROR',
+                text: 'Tanggal tidak valid!'
+              })
+            } else {
+              // console.log(`/fingerprint/download-rekap?kelas=${result.value.kelasValue}&tglawal=${result.value.tglAwal}&tglakhir=${result.value.tglAkhir}`);
+              window.open(`/fingerprint/download-rekap?kelas=${result.value.kelasValue}&tglawal=${result.value.tglAwal}&tglakhir=${result.value.tglAkhir}`, "_blank")
+            }
+          }
+        }))
+      }
+    </script>
+    <script>
+      function downloadRekap(NIM){
+        let downloadURL = "/fingerprint/download-rekap";
+        if (NIM) {
+          downloadURL += `?nim=${NIM}`;
+        }
+        window.open(downloadURL, "_blank");
+      }
+    </script>
+
     <!-- Bootstrap core JavaScript-->
-    <script src="/stylesheets/vendor/jquery/jquery.min.js"></script>
-    <script src="/stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../stylesheets/vendor/jquery/jquery.min.js"></script>
+    <script src="../stylesheets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
     <script src="/stylesheets/vendor/jquery-easing/jquery.easing.min.js"></script>

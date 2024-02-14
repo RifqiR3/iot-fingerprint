@@ -143,7 +143,7 @@
             <!-- Page Heading -->
             <div class="d-sm-flex align-items-center justify-content-between mb-4">
                 <% if (kosong == true) { %>
-                    <h1>Jadwal kelas ini masih kosong</h1>
+                    <h1>Jadwal ruangan ini masih kosong</h1>
                     <br>
                     <button onclick="addJadwal()" type="button" class="btn btn-outline-success">Tambah Jadwal</button>
                 <% } else { %>
@@ -340,7 +340,7 @@
         `<option value='${item.id_hari}'>${item.hari}</option>`
       );
       // Set Kelas
-      const kelasArray = "<%- datakelas.map(kelas => `<option value='${kelas.id}'>${kelas.kelas}</option>`) %>";
+      const kelasArray = "<%- datakelas.map(kelas => `<option value='${kelas.id_kelas}'>${kelas.kelas}</option>`) %>";
       
       function addJadwal(){
         Swal.fire({

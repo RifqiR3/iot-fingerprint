@@ -144,7 +144,7 @@
               <div class="col-sm-6">
                 <!-- Page Heading -->
                 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                  <h1 class="h3 mb-0 text-gray-800">Daftar Kelas</h1>
+                  <h1 class="h3 mb-0 text-gray-800">Daftar Ruangan</h1>
                 </div>
                 <div class="list-group">
                   <% for( let index = 0; index < data.length; index++ ) { %>
@@ -178,7 +178,7 @@
                     </thead>
                     <tbody>
                       <% for (let index = 0; index < datamatkul.length; index++) { %>
-                      <tr onmouseover="highlightRow(this)" onmouseout="unhighlightRow(this)" onclick="handleClick(this)"">
+                      <tr onmouseover="highlightRow(this)" onmouseout="unhighlightRow(this)" onclick="handleClick(this)">
                         <td><%= datamatkul[index].id_matkul %></td>
                         <td><%= datamatkul[index].matkul %></td>
                       </tr>
@@ -280,15 +280,22 @@
           title: "Tambah Matkul",
           html: `
           <label class="form-label">Matkul:</label>
-          <input type="text" class="form-control" id="matkul" required />`,
-          showCancelButton: true,
+          <input placeholder="Mata Kuliah..." type="text" class="form-control" id="matkul" required />`,
+          showCloseButton: true,
           preConfirm: () => {
             const matkul = document.getElementById('matkul').value;
             return matkul
           }
         }).then((result) => {
           if (result.isConfirmed) {
-            fetch("/fingerprint/addMatkul", {
+            if (result.value == "") {
+              Swal.fire({
+                icon: 'error',
+                title: "GAGAL",
+                text: "Mata Kuliah kosong..."
+              })
+            } else {
+              fetch("/fingerprint/addMatkul", {
               method: "POST",
               headers: {
                 'Content-Type': 'Application/json'
@@ -315,6 +322,7 @@
                 })
               }
             })
+            }
           }
         });
       }

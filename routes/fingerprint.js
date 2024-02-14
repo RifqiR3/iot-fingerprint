@@ -2,6 +2,8 @@ require("dotenv").config();
 var express = require("express");
 var router = express.Router();
 var database = require("../database");
+const excel = require("exceljs");
+const moment = require("moment");
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
@@ -15,7 +17,7 @@ router.get("/", function (req, res, next) {
       let queryUser = `SELECT *
             FROM datamahasiswa
             INNER JOIN datanode ON datamahasiswa.id_node=datanode.id_node
-            INNER JOIN datakelas ON datamahasiswa.id_kelas=datakelas.id;`;
+            INNER JOIN datakelas ON datamahasiswa.id_kelas=datakelas.id_kelas;`;
       database.query(queryUser, function (err2, dataMhs) {
         if (err2) {
           throw err2;
@@ -87,7 +89,7 @@ router.get("/kelas", function (req, res, next) {
 
 router.post("/addMatkul", function (req, res, next) {
   const matkul = req.body.matkul;
-  const query = `INSERT INTO datamatkul VALUES ('', "${matkul}")`;
+  const query = `INSERT INTO datamatkul VALUES (NULL, "${matkul}")`;
   database.query(query, function (err, data) {
     if (err) {
       throw err;
@@ -126,7 +128,7 @@ router.get("/kelasDet", function (req, res, next) {
     SELECT datajadwal.id, datajadwal.id_matkul, datajadwal.id_hari, datajadwal.id_kelas , datajadwal.waktu_mulai, datajadwal.waktu_selesai, datamatkul.matkul, datanode.id_node, datanode.lokasi_node, datakelas.kelas FROM datajadwal 
     INNER JOIN datamatkul ON datajadwal.id_matkul = datamatkul.id_matkul
     INNER JOIN datanode ON datajadwal.id_node = datanode.id_node
-    INNER JOIN datakelas ON datajadwal.id_kelas = datakelas.id
+    INNER JOIN datakelas ON datajadwal.id_kelas = datakelas.id_kelas
     WHERE datajadwal.id_node = ${id};`;
 
   database.query(query, function (err, data) {
@@ -138,7 +140,7 @@ router.get("/kelasDet", function (req, res, next) {
         if (err2) {
           throw err2;
         } else {
-          const queryKelas = `SELECT * FROM datakelas WHERE id < 1000`;
+          const queryKelas = `SELECT * FROM datakelas WHERE id_kelas < 1000`;
           database.query(queryKelas, function (err3, dataKelas) {
             if (err3) {
               throw err3;
@@ -181,7 +183,7 @@ router.post("/addJadwal", function (req, res, next) {
   // Query ribet
   const query = `
   INSERT INTO datajadwal (id, id_node, id_matkul, id_kelas, id_hari, waktu_mulai, waktu_selesai)
-  SELECT '', ${data.id_node}, ${data.id_matkul}, ${data.id_kelas}, ${data.id_hari}, '${data.waktu_masuk}', '${data.waktu_keluar}'
+  SELECT NULL, ${data.id_node}, ${data.id_matkul}, ${data.id_kelas}, ${data.id_hari}, '${data.waktu_masuk}', '${data.waktu_keluar}'
   FROM dual
   WHERE NOT EXISTS (
     SELECT 1
@@ -246,8 +248,8 @@ router.post("/updateJadwal", function (req, res, next) {
     id_hari: req.body.id_hari,
     id_matkul: req.body.id_matkul,
     id_kelas: req.body.id_kelas,
-    waktu_mulai: req.body.waktu_mulai + ":00",
-    waktu_selesai: req.body.waktu_selesai + ":00",
+    waktu_mulai: req.body.waktu_mulai,
+    waktu_selesai: req.body.waktu_selesai,
   };
 
   // Query ribet again
@@ -312,6 +314,7 @@ router.get("/tables", function (req, res, next) {
       a.id_absen,
       m.nama,
       m.NIM,
+      k.kelas,
       n.lokasi_node,
       h.hari,
       c.matkul,
@@ -328,30 +331,29 @@ router.get("/tables", function (req, res, next) {
     INNER JOIN
       datanode n ON a.id_node = n.id_node
     INNER JOIN 
-      datahari h ON a.id_hari = h.id_hari;
+      datahari h ON a.id_hari = h.id_hari
+    INNER JOIN
+      datakelas k ON m.id_kelas = k.id_kelas;
     `;
 
   database.query(query, function (err, data) {
     if (err) {
       throw err;
-    } else {
+    }
+
+    const queryKelas = "SELECT * FROM datakelas WHERE id_kelas < 10000";
+    database.query(queryKelas, function (err2, datakelas) {
+      if (err2) {
+        throw err2;
+      }
+
       res.render("fingerprint/tables", {
         title: "Tables",
         data: data,
+        datakelas: datakelas,
         url: process.env.URL_HOST,
       });
-    }
-  });
-});
-
-router.get("/validasifinger", function (req, res, next) {
-  res.render("fingerprint/validasifinger", {
-    title: "Validasi",
-    nama: "Menunggu...",
-    kelas: "Menunggu...",
-    nim: "Menunggu...",
-    persentase: "Menunggu...",
-    url: process.env.URL_HOST,
+    });
   });
 });
 
@@ -560,7 +562,7 @@ router.post("/absen", function (req, res, next) {
       return res.json({ status: "Anda tidak punya kelas disini" });
     }
     // Query check matkul
-    const queryCheckMatkul = `SELECT * FROM datajadwal WHERE id_hari = ${today} AND id_node = ${id_node} AND ('${time}' BETWEEN waktu_mulai AND waktu_selesai)`;
+    const queryCheckMatkul = `SELECT * FROM datajadwal WHERE id_kelas = ${check[0].id_kelas} AND id_hari = ${today} AND id_node = ${id_node} AND ('${time}' BETWEEN waktu_mulai AND waktu_selesai)`;
     database.query(queryCheckMatkul, function (err2, checkMatkul) {
       if (err2) {
         throw err2;
@@ -573,11 +575,13 @@ router.post("/absen", function (req, res, next) {
       const queryInsertAbsen = `
       IF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}') = '00:00:00' THEN
         UPDATE dataabsen SET absen_out = '${time}' WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}';
+        UPDATE datarekap SET status_hadir = "Hadir" WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}';
       ELSEIF(SELECT absen_out FROM dataabsen WHERE id_mahasiswa = ${check[0].id_mahasiswa} AND id_node = ${check[0].id_node} AND id_matkul = ${checkMatkul[0].id_matkul} AND tanggal = '${todayFullDate}') != '00:00:00' THEN
         SELECT id_absen FROM dataabsen WHERE id_absen = 0;
       ELSE
         INSERT INTO dataabsen (id_absen, id_mahasiswa, id_node, id_hari, id_matkul, tanggal, absen_in, absen_out, waktu_terlambat)
-        VALUES ('', ${check[0].id_mahasiswa}, ${check[0].id_node}, ${today}, ${checkMatkul[0].id_matkul}, '${todayFullDate}', '${time}', '00:00:00', '${waktuTerlambat}');
+        VALUES (NULL, ${check[0].id_mahasiswa}, ${check[0].id_node}, ${today}, ${checkMatkul[0].id_matkul}, '${todayFullDate}', '${time}', '00:00:00', '${waktuTerlambat}');
+        INSERT INTO datarekap VALUES (NULL, ${check[0].id_mahasiswa}, ${check[0].id_kelas}, ${checkMatkul[0].id_matkul}, ${check[0].id_node}, '${todayFullDate}', "Alfa");
       END IF`;
       console.log(queryInsertAbsen);
       database.query(queryInsertAbsen, function (err3, insertAbsen) {
@@ -620,6 +624,337 @@ router.post("/absen", function (req, res, next) {
     const timeDiff = new Date(timeDiffMilliseconds).toISOString().substr(11, 8);
     return timeDiff;
   }
+});
+
+router.get("/download-rekap", function (req, res) {
+  // Ambil data
+  const id_kelas = req.query.kelas;
+  const startDate = moment(req.query.tglawal, "YYYY-MM-DD").format(
+    "DD-MM-YYYY"
+  );
+  const endDate = moment(req.query.tglakhir, "YYYY-MM-DD").format("DD-MM-YYYY");
+
+  // Sheet
+  const workbook = new excel.Workbook();
+  const queryNIM = `
+  SELECT 
+    m.nama, 
+    m.NIM, 
+    k.kelas, 
+    c.matkul, 
+    r.lokasi_node, 
+    tanggal, 
+    status_hadir 
+  FROM datarekap dr 
+  INNER JOIN 
+    datamahasiswa m ON m.id_mahasiswa = dr.id_mahasiswa 
+  INNER JOIN 
+    datakelas k ON k.id_kelas = dr.id_kelas 
+  INNER JOIN 
+    datamatkul c ON c.id_matkul = dr.id_matkul 
+  INNER JOIN 
+    datanode r ON r.id_node = dr.id_node
+  WHERE dr.id_kelas = ${id_kelas} 
+  ORDER BY m.NIM ASC`;
+
+  database.query(queryNIM, function (err, results) {
+    if (err) {
+      throw err;
+    }
+    let checkNIM = [];
+    let checkMatkul = [];
+    let counter = 0;
+    for (let index = 0; index < results.length; index++) {
+      if (checkNIM.includes(results[index].NIM)) {
+        counter++;
+      } else {
+        checkNIM.push(results[index].NIM);
+        counter = 0;
+        checkMatkul.length = 0;
+      }
+
+      // Check if the sheet already exists
+      let worksheet = workbook.getWorksheet(results[index].NIM);
+
+      if (!worksheet) {
+        // Tambah worksheet baru
+        worksheet = workbook.addWorksheet(results[index].NIM);
+        // Set worksheet ke worksheet yang sekarang
+        workbook.activeSheet = results[index].NIM;
+
+        // Kolom Header
+        worksheet.addRow(["Mata Kuliah", "Minggu ke"]);
+
+        // Styling dan Merge kolom ID
+        worksheet.mergeCells(1, 1, 2, 1);
+        const kolom_id = worksheet.getCell(2, 1);
+        kolom_id.alignment = {
+          horizontal: "center",
+          vertical: "middle",
+        };
+        kolom_id.font = { bold: true };
+
+        // Data minggu berdasarkan jarak waktu
+        const week = Array.from(
+          { length: getWeeksBetween(startDate, endDate).length },
+          (_, index) => index + 1
+        );
+
+        // Masukkan data minggu berdasarkan tanggal yang dimasukkan
+        week.forEach((value, index) => {
+          worksheet.getCell(2, index + 2).value = value;
+          worksheet.getCell(2, index + 2).alignment = { horizontal: "center" };
+        });
+
+        // Styling dan Merging Kolom Header Minggu-ke
+        worksheet.mergeCells(1, 2, 1, week.length + 1);
+        const kolom_minggu = worksheet.getCell(1, 2);
+        kolom_minggu.alignment = { horizontal: "center" };
+        kolom_minggu.font = { bold: true };
+
+        // Masukkan data ke excel
+        // Masukkan matkul ke setiap baris di awal
+        checkMatkul.push(results[index].matkul);
+        checkMatkul.push("counter + 3, 1");
+        worksheet.getCell(counter + 3, 1).value = results[index].matkul;
+
+        // Auto-size kolom
+        const column = worksheet.getColumn(1);
+        const columnLength = results[index].matkul
+          ? results[index].matkul.toString().length
+          : 10;
+        column.width = columnLength < 10 ? 10 : columnLength + 4;
+
+        // Cari minggu keberapa kehadiran
+        const minggu = cariMinggu(results[index].tanggal, startDate, endDate);
+        if (minggu == -1) {
+          continue;
+        } else {
+          worksheet.getCell(counter + 3, minggu + 1).value =
+            results[index].status_hadir;
+          worksheet.getCell(counter + 3, minggu + 1).alignment = {
+            horizontal: "center",
+          };
+        }
+      } else {
+        // Cari minggu keberapa kehadiran
+        const minggu = cariMinggu(results[index].tanggal, startDate, endDate);
+        // Masukkan data ke excel
+        // Masukkan matkul ke setiap baris di awal
+        if (checkMatkul.includes(results[index].matkul)) {
+          if (minggu == -1) {
+            continue;
+          } else {
+            worksheet.getCell(counter + 3, minggu + 1).value =
+              results[index].status_hadir;
+            worksheet.getCell(counter + 3, minggu + 1).alignment = {
+              horizontal: "center",
+            };
+          }
+        } else {
+          checkMatkul.push(results[index].matkul);
+          checkMatkul.push("counter + 3, 1");
+          worksheet.getCell(counter + 3, 1).value = results[index].matkul;
+          if (minggu == -1) {
+            continue;
+          } else {
+            worksheet.getCell(counter + 3, minggu + 1).value =
+              results[index].status_hadir;
+            worksheet.getCell(counter + 3, minggu + 1).alignment = {
+              horizontal: "center",
+            };
+          }
+        }
+      }
+    }
+
+    // Set header file, baru save
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="Rekap-absen-mahasiswa-${results[0].kelas}(${startDate}-${endDate}).xlsx"`
+    );
+    workbook.xlsx
+      .write(res)
+      .then(() => {
+        res.end();
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+      });
+  });
+
+  // Fungsi buat array kolom minggu
+  function getWeeksBetween(startDate, endDate) {
+    const weeks = [];
+    let currentWeek = moment(startDate, "DD-MM-YYYY").startOf("week");
+
+    while (
+      currentWeek.isBefore(moment(endDate, "DD-MM-YYYY").startOf("week"))
+    ) {
+      weeks.push(currentWeek.format("DD-MM-YYYY"));
+      currentWeek.add(1, "week");
+    }
+
+    return weeks;
+  }
+
+  function cariMinggu(targetDate, startDate, endDate) {
+    var momentStartDate = moment(startDate, "DD-MM-YYYY");
+    var momentEndDate = moment(endDate, "DD-MM-YYYY");
+    var momentTargetDate = moment(targetDate, "DD-MM-YYYY");
+
+    // Check if the target date is within the range
+    if (
+      momentTargetDate.isBetween(momentStartDate, momentEndDate, null, "[]")
+    ) {
+      // Calculate the week number of the target date within the specified range
+      var weekNumber = momentTargetDate.isoWeek();
+      return weekNumber;
+    } else {
+      // Return an indication that the target date is outside the specified range
+      return -1; // You can choose any value that indicates the target date is outside the range
+    }
+  }
+});
+
+router.get("/perizinan", function (req, res) {
+  const query = `
+    SELECT DISTINCT
+      m.nama,
+      m.NIM,
+      k.kelas
+    FROM datamahasiswa m
+    INNER JOIN
+      datakelas k ON m.id_kelas = k.id_kelas
+    ;
+  `;
+
+  database.query(query, function (err, results) {
+    if (err) {
+      throw err;
+    }
+
+    res.render("fingerprint/perizinan", {
+      title: "Perizinan",
+      data: results,
+      url: process.env.URL_HOST,
+    });
+  });
+});
+
+router.post("/izin", function (req, res) {
+  const nim = req.body.nim;
+
+  const currentDate = new Date();
+  const today = currentDate.getDay();
+  const time = `${
+    currentDate.getHours() < 10 ? "0" : ""
+  }${currentDate.getHours()}:${
+    currentDate.getMinutes() < 10 ? "0" : ""
+  }${currentDate.getMinutes()}:${
+    currentDate.getSeconds() < 10 ? "0" : ""
+  }${currentDate.getSeconds()}`;
+  // Data tanggal hari ini full
+  const todayFullDate = `${
+    currentDate.getDate() < 10 ? "0" : ""
+  }${currentDate.getDate()}/${currentDate.getMonth() + 1 < 10 ? "0" : ""}${
+    currentDate.getMonth() + 1
+  }/${currentDate.getFullYear()}`;
+
+  const queryCheckMahasiswa = `
+  SELECT DISTINCT m.id_mahasiswa, m.nama, m.NIM, m.id_kelas, k.kelas
+  FROM datamahasiswa m 
+  INNER JOIN
+    datakelas k ON k.id_kelas = m.id_kelas
+  WHERE NIM = ${nim};
+  `;
+
+  database.query(queryCheckMahasiswa, function (err, checkMahasiswa) {
+    if (err) {
+      throw err;
+    }
+
+    const queryCheckJadwal = `
+    SELECT * FROM datajadwal 
+    WHERE id_kelas = ${checkMahasiswa[0].id_kelas} AND id_hari = ${today} AND ('${time}' BETWEEN waktu_mulai AND waktu_selesai);
+    `;
+
+    database.query(queryCheckJadwal, function (err2, checkJadwal) {
+      if (err2) {
+        throw err2;
+      }
+
+      if (checkJadwal.length == 0) {
+        return res.json({
+          berhasil: false,
+          pesan: "Mahasiswa ini tidak memiliki kuliah yang berjalan sekarang",
+        });
+      }
+
+      const queryCheckIzin = `
+      SELECT * FROM datarekap 
+      WHERE id_mahasiswa = ${checkMahasiswa[0].id_mahasiswa} 
+      AND id_kelas = ${checkMahasiswa[0].id_kelas} 
+      AND id_matkul = ${checkJadwal[0].id_matkul}
+      AND id_node = ${checkJadwal[0].id_node}
+      AND tanggal = '${todayFullDate}'
+      `;
+
+      database.query(queryCheckIzin, function (err3, checkIzin) {
+        if (err3) {
+          throw err3;
+        }
+
+        if (checkIzin.length > 0) {
+          if (checkIzin[0].status_hadir == "Izin") {
+            return res.json({
+              berhasil: false,
+              pesan:
+                "Mahasiswa ini sudah izin pada mata kuliah ini pada minggu ini",
+            });
+          } else if (checkIzin[0].status_hadir == "Hadir") {
+            return res.json({
+              berhasil: false,
+              pesan:
+                "Mahasiswa ini sudah hadir pada mata kuliah ini pada minggu ini",
+            });
+          } else {
+            return res.json({
+              berhasil: false,
+              pesan:
+                "Mahasiswa ini belum checkout pada mata kuliah ini pada minggu ini",
+            });
+          }
+        }
+
+        const queryInsertIzinAbsen = `
+          INSERT INTO dataabsen VALUES (NULL, ${checkMahasiswa[0].id_mahasiswa}, ${checkJadwal[0].id_node}, ${today}, ${checkJadwal[0].id_matkul}, '${todayFullDate}', '00:00:01', '00:00:01', '00:00:01');
+        `;
+
+        database.query(queryInsertIzinAbsen, function (err4, izinAbsen) {
+          if (err4) {
+            throw err4;
+          }
+
+          const queryInsertIzinRekap = `
+            INSERT INTO datarekap VALUES (NULL, ${checkMahasiswa[0].id_mahasiswa}, ${checkMahasiswa[0].id_kelas}, ${checkJadwal[0].id_matkul}, ${checkJadwal[0].id_node}, '${todayFullDate}', "Izin");
+          `;
+
+          database.query(queryInsertIzinRekap, function (err5, izinRekap) {
+            if (err5) {
+              throw err5;
+            }
+            return res.json({ berhasil: true });
+          });
+        });
+      });
+    });
+  });
 });
 
 module.exports = router;
