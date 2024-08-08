@@ -34,9 +34,11 @@
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
+    <link rel="stylesheet" href="/stylesheets/css/bagian-charts.css">
+
   </head>
 
-  <body id="page-top">
+  <body id="page-top" >
     <!-- Page Wrapper -->
     <div id="wrapper">
       <!-- Sidebar -->
@@ -104,12 +106,13 @@
           <!-- End of Topbar -->
 
           <!-- Begin Page Content -->
+          <div id="overlaycontent"></div>
           <div class="container-fluid">
             <!-- Page Heading -->
             <h1 class="h3 mb-2 text-gray-800">Node</h1>
             <!-- Content Row -->
             <div class="row">
-              <!-- Table tambah node -->
+              <!-- Table overlay node -->
               <table class="table">
                 <thead>
                   <tr>
@@ -153,7 +156,7 @@
                   </div>
                 </div>
               </form>
-
+              
               <!-- Table Info Node -->
               <table class="table">
                 <thead>
@@ -170,7 +173,7 @@
                 <tbody>
                   <% for (let index = 0; index < data.length; index++) { %>
                   <tr>
-                    <td><%= data[index].id_node %></td>
+                    <td id="<%= 'content'+index %>"><%= data[index].id_node %></td>
                     <td><%= data[index].nama_node %></td>
                     <td><%= data[index].lokasi_node %></td>
                     <td><%= data[index].UID %></td>
@@ -342,8 +345,10 @@
 
       // Koneksi Mqtt
       const client = mqtt.connect(url, options)
+      overlayContent("MENCOBA TERHUBUNG KE SERVER MQTT...");
       // Kalau terkoneksi
       client.on('connect', function() {
+        overlayOff();
         console.log("Terknoneksi");
         for (let index = 0; index < dataArray.length; index++) {
           console.log(typeof dataArray[index].status_node);
@@ -351,7 +356,40 @@
           console.log("Berhasil publish ke topic:", `/finger/${dataArray[index].UID}`);
           console.log("Dengan pesan status:", `${dataArray[index].status_node}`);
         } 
-      }); 
+      });
+
+      client.on('error', function (error) {
+        console.error('MQTT Error:', error.message);
+        overlayContent("KONEKSI ERROR KE SERVER MQTT...");
+      });
+
+      client.on('reconnect', function () {
+        console.log('Reconnecting...');
+        overlayContent("MENGHUBUNGKAN ULANG KE SERVER MQTT...")
+      })  
+
+      client.on('disconnect', function (packet) {
+        console.log(packet);
+        overlayContent("SERVER MQTT DISCONNECT...");
+      })
+
+      client.on('offline', function () {
+        console.log('offline');
+        overlayContent("SERVER MQTT DISCONNECT...");
+      })
+
+      client.on('close', function () {
+        console.log('Disconnected');
+        overlayContent("SERVER MQTT DISCONNECT...");
+      })
+      
+      function overlayContent(newcontent){
+        document.getElementById("overlaycontent").setAttribute('data-content', newcontent);
+      }
+      
+      function overlayOff(){
+        document.getElementById("overlaycontent").style.display = "none";
+      }
     </script>
 
     <!-- Bootstrap core JavaScript-->

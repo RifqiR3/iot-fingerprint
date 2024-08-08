@@ -1,0 +1,48 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px);
+}
+
+h3 {
+  color: white;
+  text-shadow: 1px 1px 2px black;
+}
+
+table tr {
+  position: relative;
+}
+
+table td,
+table th {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+#overlaycontent {
+  position: fixed;
+  display: block;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: calc(100% / 6.85);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+#overlaycontent::after {
+  content: attr(data-content);
+  font-size: 20px;
+  color: white;
+  position: relative;
+  top: 50%;
+  left: 25%;
+  font-weight: bold;
+}

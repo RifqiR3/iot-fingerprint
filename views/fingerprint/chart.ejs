@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+  <head>
+    <title><%= data_nama %></title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <canvas
+      id="myChart"
+      style="width: 100%; max-width: 600px; height: 100%"
+    ></canvas>
+
+    <script>
+      const d1 = new Date("2024-01-01");
+      const d2 = new Date("2024-02-20");
+      const xValues = getDatesInRange(d1, d2);
+
+      let data_tanggal = "<%= data_tanggal %>";
+      let data_status = "<%= data_status %>";
+      let data_matkul = "<%= data_matkul %>";
+
+      let ctx = document.getElementById("myChart").getContext("2d");
+      let data = {
+        labels: data_tanggal.split(","),
+        datasets: [
+          {
+            label: "Kehadiran",
+            data: data_status.split(","),
+            borderColor: "rgba(75, 192, 192, 1)",
+            fill: false,
+          },
+          {
+            label: "Mata Kuliah",
+            data: data_matkul.split(","),
+            hidden: true,
+          },
+        ],
+      };
+
+      let config = {
+        type: "line",
+        data: data,
+        options: {
+          scales: {
+            y: {
+              ticks: {
+                callback: function (value, index, values) {
+                  let attendanceStatus = {
+                    1: "Alfa",
+                    2: "Izin",
+                    3: "Hadir",
+                  };
+
+                  return attendanceStatus[value];
+                },
+              },
+            },
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  let attendanceStatus = {
+                    1: "Alfa",
+                    2: "Izin",
+                    3: "Hadir",
+                  };
+
+                  let label = `Mata Kuliah: ${
+                    context.chart.data.datasets[1].data[context.dataIndex]
+                  }`;
+
+                  if (context.datasetIndex === 0) {
+                    label +=
+                      ", Kehadiran: " + attendanceStatus[context.parsed.y];
+                  }
+
+                  return label;
+                },
+              },
+            },
+          },
+        },
+      };
+
+      let myChart = new Chart(ctx, config);
+
+      function getDatesInRange(startDate, endDate) {
+        const date = new Date(startDate.getTime());
+
+        const dates = [];
+
+        while (date <= endDate) {
+          // Format the date to a string that only includes the date part
+          const formattedDate = date.toISOString().slice(0, 10);
+          dates.push(formattedDate);
+          date.setDate(date.getDate() + 1);
+        }
+
+        return dates;
+      }
+    </script>
+  </body>
+</html>

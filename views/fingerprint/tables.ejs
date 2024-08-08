@@ -181,7 +181,7 @@
                       <th>Waktu Terlambat</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody class="font-weight-bold">
                     <% for (let index = 0; index < data.length; index++) { %>
                       <tr onmouseover="highlightRow(this)" onmouseout="unhighlightRow(this)" onclick="handleClick(this)">
                         <td><%= data[index].id_absen %></td>
@@ -273,8 +273,8 @@
         
         Swal.fire({
           icon: "question",
-          title: "DOWNLOAD?",
-          text: "Anda ingin download rekapan absen mahasiswa ini?",
+          title: "LIHAT CHART?",
+          text: "Lihat chart mahasiswa ini?",
           showCancelButton: true
         }).then((result) => {
           if (result.isConfirmed) {
@@ -329,7 +329,7 @@
     </script>
     <script>
       function downloadRekap(NIM){
-        let downloadURL = "/fingerprint/download-rekap";
+        let downloadURL = "/fingerprint/chart-mahasiswa";
         if (NIM) {
           downloadURL += `?nim=${NIM}`;
         }

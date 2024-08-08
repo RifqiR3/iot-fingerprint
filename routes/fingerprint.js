@@ -446,7 +446,7 @@ router.post("/addUser", function (req, res, next) {
     } else {
       // Kalau tidak ada lanjut insert data ke database
       let tanggal = new Date();
-      const query = `INSERT INTO datamahasiswa VALUES ('', "empty", "empty", "10000", ?, ?, ?, "empty")`;
+      const query = `INSERT INTO datamahasiswa (NIM, nama, id_kelas, id_finger, id_node, tgl_daftar_mhs, status_finger) VALUES ("empty", "empty", "10000", ?, ?, ?, "empty")`;
       const values = [
         id_finger,
         id_node,
@@ -534,6 +534,8 @@ router.post("/absen", function (req, res, next) {
   // Ambil data yang dibutuh
   const id_finger = req.body.id_finger;
   const id_node = req.body.id_node;
+  console.log(id_finger);
+  console.log(id_node);
   // Inisialisasi instance object untuk dapat id_hari hari ini, dan ambil tanggal hari ini
   const currentDate = new Date();
   // Data hari
@@ -673,9 +675,9 @@ router.get("/download-rekap", function (req, res) {
         checkMatkul.length = 0;
       }
 
-      // Check if the sheet already exists
+      // Inisiasi Worksheet
       let worksheet = workbook.getWorksheet(results[index].NIM);
-
+      // Check worksheet ada atau tidak
       if (!worksheet) {
         // Tambah worksheet baru
         worksheet = workbook.addWorksheet(results[index].NIM);
@@ -953,6 +955,46 @@ router.post("/izin", function (req, res) {
           });
         });
       });
+    });
+  });
+});
+
+router.get("/chart-mahasiswa", function (req, res) {
+  const nim = req.query.nim;
+
+  const query = `SELECT dr.status_hadir, dr.tanggal, dt.matkul, dm.nama FROM datarekap dr
+  INNER JOIN datamahasiswa dm ON dr.id_mahasiswa = dm.id_mahasiswa
+  INNER JOIN datamatkul dt ON dr.id_matkul = dt.id_matkul
+  WHERE dm.NIM = ${nim}`;
+
+  database.query(query, function (err, result) {
+    if (err) {
+      throw err;
+    }
+
+    let statusData = [];
+    let tanggalData = [];
+    let matkulData = [];
+    let namaData = result[0].nama;
+
+    for (let index = 0; index < result.length; index++) {
+      if (result[index].status_hadir == "Hadir") {
+        statusData.push(3);
+      } else if (result[index].status_hadir == "Alfa") {
+        statusData.push(2);
+      } else {
+        statusData.push(1);
+      }
+
+      tanggalData.push(result[index].tanggal);
+      matkulData.push(result[index].matkul);
+    }
+
+    res.render("fingerprint/chart", {
+      data_status: statusData,
+      data_tanggal: tanggalData,
+      data_matkul: matkulData,
+      data_nama: namaData,
     });
   });
 });
